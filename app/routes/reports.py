@@ -8,7 +8,7 @@ from num2words import num2words
 
 reports_bp = Blueprint('reports', __name__)
 
-# --- INVOICES SECTION ---
+# --- INVOICES ---
 @reports_bp.route('/invoices')
 @login_required
 def selection():
@@ -26,12 +26,18 @@ def generate_bill():
         flash("Please select month and vendor")
         return redirect(url_for('reports.selection'))
 
-    # Fetch Vendor & Settings
+    # 1. Fetch Vendor (Safe Check)
     vendor_obj = Vendor.query.filter_by(name=vendor_name).first()
-    display_name = vendor_obj.billing_name if (vendor_obj and vendor_obj.billing_name) else vendor_name
-    display_address = vendor_obj.billing_address if (vendor_obj and vendor_obj.billing_address) else "Manipal / Udupi"
 
-    # Fetch Entries
+    if not vendor_obj:
+        # Fallback if vendor was deleted from DB but selected manually
+        display_name = vendor_name
+        display_address = "Manipal / Udupi"
+    else:
+        display_name = vendor_obj.billing_name if vendor_obj.billing_name else vendor_name
+        display_address = vendor_obj.billing_address if vendor_obj.billing_address else "Manipal / Udupi"
+
+    # 2. Fetch Entries
     entries = Entry.query.filter(
         func.strftime('%Y-%m', Entry.date) == month,
         Entry.vendor == vendor_name
@@ -45,7 +51,6 @@ def generate_bill():
     total_parcels = sum(e.parcels for e in entries)
     grand_total = sum(e.total for e in entries)
 
-    # Format
     invoice_no = f"INV-{month.replace('-','')}-{datetime.now().strftime('%d%H')}"
     display_month = datetime.strptime(month, '%Y-%m').strftime('%B %Y')
 
@@ -57,7 +62,7 @@ def generate_bill():
     return render_template('invoice_print.html',
                            vendor=display_name,
                            address=display_address,
-                           vendor_settings=vendor_obj,
+                           vendor_settings=vendor_obj, # Passes object or None
                            entries=entries,
                            month=display_month,
                            invoice_no=invoice_no,
@@ -65,20 +70,30 @@ def generate_bill():
                            grand_total=grand_total,
                            total_words=total_words)
 
-# --- ANALYTICS SECTION (WAS MISSING) ---
+# --- ANALYTICS ---
 @reports_bp.route('/analytics')
 @login_required
 def analytics():
-    # 1. Monthly Revenue Trend (Last 6 Months)
+    # 1. Monthly Revenue (Safe Query)
     monthly_data = db.session.query(
         func.strftime('%Y-%m', Entry.date).label('month'),
         func.sum(Entry.total).label('revenue')
     ).group_by('month').order_by('month').limit(6).all()
 
-    labels = [datetime.strptime(d.month, '%Y-%m').strftime('%b') for d in monthly_data]
-    data = [d.revenue for d in monthly_data]
+    # Safety: Filter out None values in case of bad data
+    labels = []
+    data = []
 
-    # 2. Top Vendors by Volume
+    for d in monthly_data:
+        if d.month: # Check if month is not None
+            try:
+                lbl = datetime.strptime(d.month, '%Y-%m').strftime('%b')
+                labels.append(lbl)
+                data.append(d.revenue)
+            except:
+                continue
+
+    # 2. Top Vendors
     vendor_stats = db.session.query(
         Entry.vendor,
         func.sum(Entry.parcels).label('total_parcels')
