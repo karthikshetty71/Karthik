@@ -37,7 +37,7 @@ def create_app():
             db.session.add(admin)
             db.session.commit()
             print(" System: Default Admin Created (admin/admin123)")
-        
+
         # Create Default Vendors
         if not Vendor.query.first():
             db.session.add(Vendor(name="M/S Best Sellers"))
@@ -45,15 +45,16 @@ def create_app():
             db.session.add(Vendor(name="Manipal Technologies"))
             db.session.commit()
 
+    # --- LOGGING SIGNALS (Fixed Indentation) ---
     from flask_login import user_logged_in, user_logged_out
-        from app.models import AuditLog
+    from app.models import AuditLog
 
-        @user_logged_in.connect_via(app)
-        def log_login(sender, user, **extra):
-            AuditLog.log(user, "LOGIN", "User logged in successfully")
+    @user_logged_in.connect_via(app)
+    def log_login(sender, user, **extra):
+        AuditLog.log(user, "LOGIN", "User logged in successfully")
 
-        @user_logged_out.connect_via(app)
-        def log_logout(sender, user, **extra):
-            AuditLog.log(user, "LOGOUT", "User logged out")
+    @user_logged_out.connect_via(app)
+    def log_logout(sender, user, **extra):
+        AuditLog.log(user, "LOGOUT", "User logged out")
 
     return app
