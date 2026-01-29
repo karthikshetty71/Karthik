@@ -154,7 +154,12 @@
             <div class="flex items-start gap-2">
                 <div class="bg-blue-600 p-1.5 rounded-full mt-1 shrink-0"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
                 <div class="bg-gray-800 text-gray-200 text-xs p-3 rounded-lg rounded-tl-none max-w-[85%]">
-                    Hello! Ask me about revenue, vendor rates, or pending balances.
+                    Hello! How can I help today?
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        <button onclick="sendChip('Today\'s Revenue')" class="bg-blue-900/50 border border-blue-500/30 px-2 py-1 rounded text-[10px] hover:bg-blue-600 transition">💰 Revenue</button>
+                        <button onclick="sendChip('Compare Rates')" class="bg-blue-900/50 border border-blue-500/30 px-2 py-1 rounded text-[10px] hover:bg-blue-600 transition">⚖️ Best Rates</button>
+                        <button onclick="sendChip('Last activity')" class="bg-blue-900/50 border border-blue-500/30 px-2 py-1 rounded text-[10px] hover:bg-blue-600 transition">🕒 Logs</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -257,6 +262,10 @@
         container.insertAdjacentHTML('beforeend', html);
         container.scrollTop = container.scrollHeight;
         return id;
+    }
+    function sendChip(text) {
+        document.getElementById('chat-input').value = text;
+        sendMessage();
     }
 </script>
 
