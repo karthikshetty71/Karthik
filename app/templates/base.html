@@ -256,6 +256,28 @@
         return id;
     }
 
+    function addMessage(text, sender, isHtml = false) {
+        const container = document.getElementById('chat-messages');
+        const id = 'msg-' + Date.now();
+        const isBot = sender === 'bot';
+
+        // Advanced Visual Logic
+        let borderClass = "border-blue-500/20";
+        if (text.includes("CRITICAL") || text.includes("error")) borderClass = "border-red-500/50";
+        if (text.includes("margin") || text.includes("Profit")) borderClass = "border-green-500/50";
+
+        const html = `
+            <div id="${id}" class="flex ${isBot ? 'justify-start' : 'justify-end'} animate-fade-in-up">
+                <div class="${isBot ? 'bg-blue-900/10 border ' + borderClass + ' text-gray-300' : 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'} p-3 rounded-lg max-w-[90%] font-mono text-[11px] transition-all duration-500">
+                    ${isBot ? '<span class="text-blue-500 font-bold mr-1 animate-pulse">#</span>' : ''} ${text}
+                </div>
+            </div>`;
+
+        container.insertAdjacentHTML('beforeend', html);
+        container.scrollTop = container.scrollHeight;
+        return id;
+    }
+
     function sendChip(t) { document.getElementById('chat-input').value = t; sendMessage(); }
 </script>
 </body>
