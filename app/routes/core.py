@@ -1,14 +1,13 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from datetime import date, datetime
-from app.models import Entry, Vendor
+from app.models import Entry, Vendor, AuditLog
 from app.extensions import db
 from sqlalchemy import func
 
 core_bp = Blueprint('core', __name__)
 
 # --- HELPER FUNCTIONS ---
-# These prevent the "could not convert string to float" error
 def safe_float(value):
     try:
         if not value or value.strip() == '': return 0.0
@@ -35,12 +34,15 @@ def home():
             transport = safe_float(request.form.get('transport'))
             parcels = safe_int(request.form.get('parcels'))
 
+            vendor_name = request.form['vendor']
+            rr_number = request.form['rr_no']
+
             # 2. Create the entry
             new_entry = Entry(
                 date=datetime.strptime(request.form['date'], '%Y-%m-%d'),
                 bill_no=f"B-{datetime.now().strftime('%d%H%M')}",
-                rr_no=request.form['rr_no'],
-                vendor=request.form['vendor'],
+                rr_no=rr_number,
+                vendor=vendor_name,
                 ship_from=request.form['from'],
                 ship_to=request.form['to'],
                 parcels=parcels,
@@ -51,6 +53,10 @@ def home():
             )
             db.session.add(new_entry)
             db.session.commit()
+
+            # LOGGING
+            AuditLog.log(current_user, "ADD ENTRY", f"Added {parcels} parcels for {vendor_name} (RR: {rr_number})")
+
             flash('Entry Added Successfully')
             return redirect(url_for('core.home'))
         except Exception as e:
@@ -140,8 +146,16 @@ def admin_view():
 @login_required
 def delete_entry(id):
     entry = Entry.query.get_or_404(id)
+
+    # Capture details before delete for the log
+    details = f"Deleted Entry #{entry.id} - {entry.vendor} (RR: {entry.rr_no})"
+
     db.session.delete(entry)
     db.session.commit()
+
+    # LOGGING
+    AuditLog.log(current_user, "DELETE ENTRY", details)
+
     flash('Entry Deleted')
 
     # Redirect back to whichever page you came from
@@ -172,6 +186,10 @@ def edit_entry(id):
             entry.total = entry.handling_chg + entry.railway_chg + entry.transport_chg
 
             db.session.commit()
+
+            # LOGGING
+            AuditLog.log(current_user, "UPDATE ENTRY", f"Edited Entry #{entry.id} ({entry.vendor})")
+
             flash('Entry Updated')
 
             if request.referrer and 'admin_view' in request.referrer:

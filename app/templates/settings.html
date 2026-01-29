@@ -17,6 +17,9 @@
             <button onclick="showTab('users')" id="tab-btn-users" class="px-4 py-2 text-xs font-bold rounded transition text-gray-400 hover:text-white hover:bg-white/5">
                 USER ACCESS
             </button>
+            <button onclick="showTab('audit')" id="tab-btn-audit" class="px-4 py-2 text-xs font-bold rounded transition text-gray-400 hover:text-white hover:bg-white/5">
+                AUDIT LOGS
+            </button>
             <button onclick="showTab('system')" id="tab-btn-system" class="px-4 py-2 text-xs font-bold rounded transition text-gray-400 hover:text-white hover:bg-white/5">
                 SYSTEM DATA
             </button>
@@ -194,6 +197,48 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-audit" class="tab-content hidden">
+        <div class="glass p-6 rounded-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-white">System Activity Log</h3>
+                <span class="text-xs text-gray-500">Auto-cleans records > 180 days</span>
+            </div>
+
+            <div class="overflow-hidden rounded-lg border border-white/10">
+                <table class="w-full text-left text-sm text-gray-400">
+                    <thead class="bg-black/40 text-gray-500 font-bold text-xs uppercase">
+                    <tr>
+                        <th class="p-3">Time</th>
+                        <th class="p-3">User</th>
+                        <th class="p-3">Action</th>
+                        <th class="p-3">Details</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800 bg-black/10 font-mono text-xs">
+                    {% for log in audit_logs %}
+                    <tr class="hover:bg-white/5 transition">
+                        <td class="p-3 text-gray-500 whitespace-nowrap">{{ log.timestamp.strftime('%d-%b %H:%M') }}</td>
+                        <td class="p-3 text-blue-400 font-bold">{{ log.username }}</td>
+                        <td class="p-3">
+                                <span class="px-2 py-0.5 rounded
+                                    {% if 'DELETE' in log.action %}bg-red-500/20 text-red-400
+                                    {% elif 'UPDATE' in log.action %}bg-yellow-500/20 text-yellow-400
+                                    {% elif 'INVOICE' in log.action %}bg-green-500/20 text-green-400
+                                    {% else %}bg-gray-700 text-gray-300{% endif %}">
+                                    {{ log.action }}
+                                </span>
+                        </td>
+                        <td class="p-3 text-white">{{ log.details }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="p-4 text-center">No activity recorded yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

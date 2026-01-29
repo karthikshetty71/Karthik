@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required
+from flask_login import login_required, current_user
 from datetime import datetime, date
-from app.models import Entry, Vendor
+from app.models import Entry, Vendor, AuditLog
 from app.extensions import db
 from sqlalchemy import func
 from num2words import num2words
@@ -69,6 +69,9 @@ def generate_bill():
         total_words = num2words(grand_total, lang='en_IN') + " Rupees Only"
     except:
         total_words = f"{grand_total} Rupees Only"
+
+    # 8. LOGGING (New Addition)
+    AuditLog.log(current_user, "INVOICE", f"Generated invoice for {vendor_name} ({month})")
 
     return render_template('invoice_print.html',
                            vendor=display_name,

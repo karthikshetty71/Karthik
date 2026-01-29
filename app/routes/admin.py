@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, send_file, flash
 from flask_login import login_required, current_user
-from app.models import Vendor, User, Entry
+from app.models import Vendor, User, Entry, AuditLog
 from app.extensions import db
 import os
 
@@ -12,24 +12,27 @@ admin_bp = Blueprint('admin', __name__)
 def settings():
     """
     Renders the main settings dashboard with Tabs.
-    Gathers data for Vendors, Users, and System Stats.
+    Gathers data for Vendors, Users, System Stats, and Audit Logs.
     """
-    # 1. Fetch Vendor Data (Visible to all, editable by admin)
+    # 1. Fetch Vendor Data (Visible to all)
     vendors = Vendor.query.all()
 
-    # 2. Fetch User Data (Hidden for non-admins)
+    # 2. Admin-Only Data (Users, Stats, Logs)
     users = []
-    if current_user.is_admin:
-        users = User.query.all()
-
-    # 3. System Stats (For the Data Tab - Admins Only)
+    audit_logs = []
     db_size = "Unknown"
     total_entries = 0
 
     if current_user.is_admin:
+        # Fetch Users
+        users = User.query.all()
+
+        # Fetch Audit Logs (Last 50 events)
+        audit_logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(50).all()
+
+        # System Stats
         total_entries = Entry.query.count()
         try:
-            # Check root directory or instance folder for DB size
             db_filename = 'logistics.db'
             paths = [
                 os.path.join(os.getcwd(), db_filename),
@@ -47,7 +50,8 @@ def settings():
                            vendors=vendors,
                            users=users,
                            db_size=db_size,
-                           total_entries=total_entries)
+                           total_entries=total_entries,
+                           audit_logs=audit_logs)
 
 # --- VENDOR ACTIONS ---
 
@@ -69,11 +73,14 @@ def add_vendor():
                 transport_rate=float(request.form.get('transport', 0.0)),
                 billing_name=request.form.get('billing_name'),
                 billing_address=request.form.get('billing_address'),
-                # Default visibility: All True
                 show_rr=True, show_handling=True, show_railway=True, show_transport=True
             ))
             db.session.commit()
+
+            # LOGGING
+            AuditLog.log(current_user, "ADD VENDOR", f"Added new vendor: {name}")
             flash(f"Vendor '{name}' added.")
+
     return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/settings/vendor/update/<int:id>', methods=['POST'])
@@ -81,13 +88,18 @@ def add_vendor():
 def update_vendor(id):
     vendor = Vendor.query.get_or_404(id)
 
-    # 1. Allow ANY user to update Pending Balance
     try:
+        # 1. Allow ANY user to update Pending Balance
         new_pending = request.form.get('pending_balance')
         if new_pending is not None:
+            old_balance = vendor.pending_balance
             vendor.pending_balance = float(new_pending)
 
-        # 2. Only ADMINS can update critical fields (Rates, Names, etc.)
+            # Log specific balance change if that's the only thing happening (Standard User)
+            if not current_user.is_admin and old_balance != vendor.pending_balance:
+                AuditLog.log(current_user, "UPDATE BALANCE", f"Updated {vendor.name} balance to {vendor.pending_balance}")
+
+        # 2. Only ADMINS can update critical fields
         if current_user.is_admin:
             vendor.rate_per_parcel = float(request.form.get('rate'))
             vendor.transport_rate = float(request.form.get('transport'))
@@ -99,14 +111,18 @@ def update_vendor(id):
             vendor.show_railway = bool(request.form.get('show_railway'))
             vendor.show_transport = bool(request.form.get('show_transport'))
 
+            # Log full update
+            AuditLog.log(current_user, "UPDATE VENDOR", f"Updated details for {vendor.name}")
+
         db.session.commit()
         flash(f"Updated {vendor.name}")
+
     except Exception as e:
         flash(f"Error: {str(e)}")
 
     return redirect(url_for('admin.settings'))
 
-@admin_bp.route('/settings/vendor/delete/<int:id>')
+@admin_bp.route('/settings/vendor/delete/<int:id>', methods=['GET'])
 @login_required
 def delete_vendor(id):
     if not current_user.is_admin:
@@ -114,9 +130,14 @@ def delete_vendor(id):
         return redirect(url_for('admin.settings'))
 
     v = Vendor.query.get_or_404(id)
+    name = v.name # Capture name before delete
     db.session.delete(v)
     db.session.commit()
-    flash(f"Deleted vendor: {v.name}")
+
+    # LOGGING
+    AuditLog.log(current_user, "DELETE VENDOR", f"Deleted vendor: {name}")
+    flash(f"Deleted vendor: {name}")
+
     return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/settings/vendor/default/<int:id>')
@@ -126,8 +147,13 @@ def set_default_vendor(id):
         return redirect(url_for('admin.settings'))
 
     Vendor.query.update({Vendor.is_default: False})
-    Vendor.query.get_or_404(id).is_default = True
+    v = Vendor.query.get_or_404(id)
+    v.is_default = True
     db.session.commit()
+
+    # LOGGING
+    AuditLog.log(current_user, "UPDATE VENDOR", f"Set {v.name} as default vendor")
+
     return redirect(url_for('admin.settings'))
 
 # --- USER ACTIONS (ADMIN ONLY) ---
@@ -149,7 +175,11 @@ def add_user():
             new_user.set_password(password)
             db.session.add(new_user)
             db.session.commit()
+
+            # LOGGING
+            AuditLog.log(current_user, "ADD USER", f"Created user: {username}")
             flash(f'User {username} added')
+
     return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/settings/user/delete/<int:id>')
@@ -163,9 +193,14 @@ def delete_user(id):
         return redirect(url_for('admin.settings'))
 
     user = User.query.get_or_404(id)
+    username = user.username # Capture before delete
     db.session.delete(user)
     db.session.commit()
-    flash(f'Deleted user {user.username}')
+
+    # LOGGING
+    AuditLog.log(current_user, "DELETE USER", f"Deleted user: {username}")
+    flash(f'Deleted user {username}')
+
     return redirect(url_for('admin.settings'))
 
 # --- SYSTEM ACTIONS (ADMIN ONLY) ---
@@ -176,9 +211,10 @@ def backup():
     if not current_user.is_admin:
         return redirect(url_for('core.home'))
 
-    db_filename = 'logistics.db'
+    # Optional: Log backup creation
+    AuditLog.log(current_user, "SYSTEM", "Downloaded Database Backup")
 
-    # Try multiple locations to find the DB
+    db_filename = 'logistics.db'
     paths = [
         os.path.join(os.getcwd(), db_filename),
         os.path.join(os.getcwd(), 'instance', db_filename)
