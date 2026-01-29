@@ -146,7 +146,7 @@ def admin_view():
     today = datetime.today().strftime('%Y-%m')
     return redirect(url_for('core.view_data', month=today, mode='admin', vendor='All'))
 
-# --- 5. EDIT ENTRY ROUTE (Needed for the edit button) ---
+# --- 5. EDIT ENTRY ROUTE (FIXED) ---
 @core_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_entry(id):
@@ -154,22 +154,31 @@ def edit_entry(id):
     vendors = Vendor.query.all()
 
     if request.method == 'POST':
-        # Simple update logic matching the Quick Entry fields
         try:
+             # 1. Update Basic Info
              entry.date = datetime.strptime(request.form['date'], '%Y-%m-%d')
-             entry.vendor_id = int(request.form['vendor']) # Using ID now
-             entry.rr_no = request.form['rr_no']
-             entry.ship_from = request.form['from']
-             entry.ship_to = request.form['to']
-             entry.parcels = safe_int(request.form['parcels'])
+             entry.vendor_id = int(request.form['vendor'])
+             entry.rr_no = request.form.get('rr_no')
+             entry.ship_from = request.form.get('from')
+             entry.ship_to = request.form.get('to')
 
-             # Recalculate charges if needed, or take from form
-             # For simplicity, let's assume simple editing updates just the core fields
-             # or specific charges if you add inputs for them in edit.html
+             # 2. Update Parcels
+             entry.parcels = safe_int(request.form.get('parcels'))
+
+             # 3. Update Charges (THIS WAS MISSING BEFORE)
+             entry.handling_chg = safe_float(request.form.get('handling'))
+             entry.railway_chg = safe_float(request.form.get('railway'))
+             entry.transport_chg = safe_float(request.form.get('transport'))
+
+             # 4. Recalculate Grand Total
+             entry.grand_total = entry.handling_chg + entry.railway_chg + entry.transport_chg
 
              db.session.commit()
-             flash("Entry Updated")
+             AuditLog.log(current_user, "EDIT ENTRY", f"Updated Entry #{entry.id}")
+
+             flash("Entry Updated Successfully")
              return redirect(url_for('core.view_data'))
+
         except Exception as e:
             flash(f"Error: {e}")
 

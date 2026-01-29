@@ -19,7 +19,7 @@
                     <label class="block text-xs uppercase text-gray-500 mb-1 font-bold">Vendor</label>
                     <div class="relative">
                         <select name="vendor" id="vendorSelect" required onchange="autoCalc()"
-                                class="w-full h-10 bg-black/40 border border-gray-700 rounded px-3 text-white appearance-none outline-none focus:border-blue-500">
+                                class="w-full h-10 bg-black/40 border border-gray-700 rounded px-3 text-white appearance-none outline-none focus:border-blue-500 cursor-pointer">
                             {% for v in vendors %}
                             <option value="{{ v.id }}"
                                     data-rate="{{ v.rate_per_parcel }}"
@@ -105,7 +105,7 @@
         return parseFloat(document.getElementById(id).value) || 0;
     }
 
-    // --- SCENARIO 1: Changing Parcels/Vendor -> Auto Calculate Handling/Transport ---
+    // --- LOGIC: Triggered when Parcels change OR Vendor changes ---
     function autoCalc() {
         const parcels = getVal('parcels');
 
@@ -116,18 +116,19 @@
         const ratePerParcel = parseFloat(selectedOption.getAttribute('data-rate')) || 0;
         const transRate = parseFloat(selectedOption.getAttribute('data-trans')) || 0;
 
-        // Auto Calculate
+        // Auto Calculate Values
         const handling = parcels * ratePerParcel;
-        const transport = parcels * transRate; // Standard logic
+        const transport = parcels * transRate; // Assuming standard logic
 
         // Update Fields
         document.getElementById('handling').value = handling.toFixed(1);
         document.getElementById('transport').value = transport.toFixed(1);
 
-        updateTotalOnly(); // Recalculate sum
+        // Update Grand Total
+        updateTotalOnly();
     }
 
-    // --- SCENARIO 2: Manually Typing Charges -> Just Sum It Up ---
+    // --- LOGIC: Triggered when ANY amount field changes manually ---
     function updateTotalOnly() {
         const handling = getVal('handling');
         const transport = getVal('transport');
