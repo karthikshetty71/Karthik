@@ -1,71 +1,71 @@
-from flask import Blueprint, render_template, request, Response
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
-from sqlalchemy import func
 from datetime import datetime
-from num2words import num2words
 from app.models import Entry, Vendor
-from app.extensions import db
-import csv
-import io
+from sqlalchemy import func
+from num2words import num2words
 
+# Define Blueprint
 reports_bp = Blueprint('reports', __name__)
-
-@reports_bp.route('/analytics')
-@login_required
-def analytics():
-    monthly_data = db.session.query(
-        func.strftime('%Y-%m', Entry.date).label('month'),
-        func.sum(Entry.total).label('total')
-    ).group_by('month').order_by('month').all()
-    labels = [d.month for d in monthly_data]
-    values = [d.total for d in monthly_data]
-    return render_template('analytics.html', labels=labels, values=values)
 
 @reports_bp.route('/invoices')
 @login_required
-def invoices():
-    return render_template('invoices_select.html', today=datetime.today().strftime('%Y-%m'), vendors=Vendor.query.all())
+def selection():
+    today = datetime.today().strftime('%Y-%m')
+    vendors = Vendor.query.all()
+    return render_template('invoices_select.html', today=today, vendors=vendors)
 
 @reports_bp.route('/generate_bill')
 @login_required
 def generate_bill():
     month = request.args.get('month')
-    vendor = request.args.get('vendor')
-    
-    entries = Entry.query.filter(db.cast(Entry.date, db.String).like(f'{month}%'))
-    if vendor != 'All':
-        entries = entries.filter_by(vendor=vendor)
-    entries = entries.order_by(Entry.date).all()
-    
-    grand_total = sum(e.total for e in entries)
-    total_parcels = sum(e.parcels for e in entries)
-    total_words = num2words(grand_total, lang='en_IN').title().replace("-", " ") + " Only"
-    
-    # --- NEW: Generate Single Invoice Number for Header ---
-    # Format: INV-YYYYMM-VENDOR (e.g. INV-202409-MAN)
-    clean_month = month.replace('-', '')
-    clean_vendor = vendor[:3].upper() if vendor != 'All' else 'ALL'
-    invoice_no = f"INV-{clean_month}-{clean_vendor}"
-    
-    return render_template('invoice_print.html', 
-                           entries=entries, 
-                           month=month, 
-                           vendor=vendor, 
-                           grand_total=grand_total, 
-                           total_parcels=total_parcels, 
-                           total_words=total_words,
-                           invoice_no=invoice_no) # Passing the new ID
+    vendor_name = request.args.get('vendor')
 
-@reports_bp.route('/export_csv')
-@login_required
-def export_csv():
-    month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    entries = Entry.query.filter(db.cast(Entry.date, db.String).like(f'{month}%')).order_by(Entry.date).all()
-    
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['Date', 'Bill No', 'RR No', 'Vendor', 'From', 'To', 'Parcels', 'Handling', 'Railway', 'Transport', 'Total'])
-    for e in entries:
-        writer.writerow([e.date, e.bill_no, e.rr_no, e.vendor, e.ship_from, e.ship_to, e.parcels, e.handling_chg, e.railway_chg, e.transport_chg, e.total])
-        
-    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition": f"attachment; filename=kps_export_{month}.csv"})
+    if not month or not vendor_name:
+        flash("Please select month and vendor")
+        return redirect(url_for('reports.selection'))
+
+    # 1. Fetch Vendor Details & Settings
+    # We need the full object to access .show_rr, .show_handling, etc.
+    vendor_obj = Vendor.query.filter_by(name=vendor_name).first()
+
+    # Determine Display Name & Address (Fallback if empty)
+    # If billing_name is set in Admin, use it. Otherwise use internal name.
+    display_name = vendor_obj.billing_name if (vendor_obj and vendor_obj.billing_name) else vendor_name
+    display_address = vendor_obj.billing_address if (vendor_obj and vendor_obj.billing_address) else "Manipal / Udupi"
+
+    # 2. Fetch Entries for this Month & Vendor
+    entries = Entry.query.filter(
+        func.strftime('%Y-%m', Entry.date) == month,
+        Entry.vendor == vendor_name
+    ).order_by(Entry.date).all()
+
+    if not entries:
+        flash(f"No records found for {vendor_name} in {month}")
+        return redirect(url_for('reports.selection'))
+
+    # 3. Calculate Totals
+    total_parcels = sum(e.parcels for e in entries)
+    grand_total = sum(e.total for e in entries)
+
+    # 4. Format Data for Display
+    invoice_no = f"INV-{month.replace('-','')}-{datetime.now().strftime('%d%H')}"
+    display_month = datetime.strptime(month, '%Y-%m').strftime('%B %Y')
+
+    # 5. Convert Total to Words (Indian Format)
+    try:
+        total_words = num2words(grand_total, lang='en_IN') + " Rupees Only"
+    except:
+        total_words = f"{grand_total} Rupees Only"
+
+    # 6. Render the PDF Template
+    return render_template('invoice_print.html',
+                           vendor=display_name,       # Name on Bill
+                           address=display_address,   # Address on Bill
+                           vendor_settings=vendor_obj, # <--- THIS FIXES THE ERROR (Passes checkboxes)
+                           entries=entries,
+                           month=display_month,
+                           invoice_no=invoice_no,
+                           total_parcels=total_parcels,
+                           grand_total=grand_total,
+                           total_words=total_words)
