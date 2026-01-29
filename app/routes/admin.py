@@ -6,11 +6,12 @@ import os
 
 admin_bp = Blueprint('admin', __name__)
 
-# --- SETTINGS & VENDOR MASTER ---
+# --- SETTINGS (Viewable by All, Editable by Admin) ---
 @admin_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
     # 1. SECURITY: Block non-admins from saving data (POST)
+    # They can still view the page (GET)
     if request.method == 'POST' and not current_user.is_admin:
         flash("Read Only Mode: You cannot edit vendor details.")
         return redirect(url_for('admin.settings'))
@@ -24,14 +25,13 @@ def settings():
                 flash(f"Vendor '{name}' already exists.")
             else:
                 # Create Vendor with all fields
+                # Default visibility is set to True for new vendors
                 db.session.add(Vendor(
                     name=name,
                     rate_per_parcel=float(request.form.get('rate', 70.0)),
                     transport_rate=float(request.form.get('transport', 0.0)),
                     billing_name=request.form.get('billing_name'),
                     billing_address=request.form.get('billing_address'),
-
-                    # Default Visibility: All True for new vendors
                     show_rr=True,
                     show_handling=True,
                     show_railway=True,
@@ -60,7 +60,8 @@ def update_vendor_rate(id):
         vendor.billing_name = request.form.get('billing_name')
         vendor.billing_address = request.form.get('billing_address')
 
-        # Column Visibility (Checkboxes send 'on' if checked, None if unchecked)
+        # Checkbox Logic:
+        # HTML checkboxes send 'on' if checked, and nothing (None) if unchecked.
         vendor.show_rr = True if request.form.get('show_rr') else False
         vendor.show_handling = True if request.form.get('show_handling') else False
         vendor.show_railway = True if request.form.get('show_railway') else False
@@ -72,7 +73,7 @@ def update_vendor_rate(id):
         flash(f"Error updating: {str(e)}")
     return redirect(url_for('admin.settings'))
 
-@admin_bp.route('/set_default_vendor/<int:id>', methods=['GET'])
+@admin_bp.route('/set_default_vendor/<int:id>')
 @login_required
 def set_default_vendor(id):
     # Strict Admin Check
