@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="glass rounded-2xl p-4 min-h-screen">
+
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-purple-400 uppercase tracking-wider">Admin Master View</h2>
+            <p class="text-xs text-gray-500">Showing all records for {{ month }}</p>
+        </div>
+        <a href="/view" class="text-xs bg-gray-700 px-4 py-2 rounded text-white hover:bg-gray-600">Back to Standard View</a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left text-gray-400 border-collapse">
+            <thead class="text-xs uppercase bg-purple-900/20 text-purple-300 border-b border-purple-500/30">
+            <tr>
+                <th class="px-2 py-3">Date</th>
+                <th class="px-2 py-3">Bill No</th>
+                <th class="px-2 py-3">RR No</th>
+                <th class="px-2 py-3">Vendor</th>
+                <th class="px-2 py-3">From</th>
+                <th class="px-2 py-3">To</th>
+                <th class="px-2 py-3 text-right">Pcl</th>
+                <th class="px-2 py-3 text-right">Hndl</th>
+                <th class="px-2 py-3 text-right">Rail</th>
+                <th class="px-2 py-3 text-right">Trns</th>
+                <th class="px-2 py-3 text-right text-white">Total</th>
+                <th class="px-2 py-3 text-center">Action</th>
+            </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+            {% for entry in entries %}
+            <tr class="hover:bg-white/5 transition">
+                <td class="px-2 py-2 text-white whitespace-nowrap">{{ entry.date.strftime('%d-%m') }}</td>
+                <td class="px-2 py-2 font-mono">{{ entry.bill_no }}</td>
+                <td class="px-2 py-2 font-mono text-blue-400">{{ entry.rr_no }}</td>
+                <td class="px-2 py-2 text-white font-bold">{{ entry.vendor }}</td>
+                <td class="px-2 py-2">{{ entry.ship_from }}</td>
+                <td class="px-2 py-2">{{ entry.ship_to }}</td>
+                <td class="px-2 py-2 text-right">{{ entry.parcels }}</td>
+                <td class="px-2 py-2 text-right">{{ "{:.0f}".format(entry.handling_chg) }}</td>
+                <td class="px-2 py-2 text-right">{{ "{:.0f}".format(entry.railway_chg) }}</td>
+                <td class="px-2 py-2 text-right">{{ "{:.0f}".format(entry.transport_chg) }}</td>
+                <td class="px-2 py-2 text-right text-green-400 font-bold">{{ "{:.0f}".format(entry.total) }}</td>
+                <td class="px-2 py-2 text-center flex justify-center gap-1">
+                    <a href="/edit/{{ entry.id }}" class="text-blue-500 hover:text-white px-2 border border-blue-500/30 rounded">Edit</a>
+                    <a href="/delete/{{ entry.id }}" onclick="return confirm('Delete?')" class="text-red-500 hover:text-white px-2 border border-red-500/30 rounded">Del</a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

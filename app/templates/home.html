@@ -49,7 +49,10 @@
                         <select name="vendor" id="vendorSelect" onchange="calculateCharges()"
                                 class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 appearance-none truncate pr-8">
                             {% for v in vendors %}
-                            <option value="{{ v.name }}" data-rate="{{ v.rate_per_parcel }}">{{ v.name }}</option>
+                            <option value="{{ v.name }}" data-rate="{{ v.rate_per_parcel }}"
+                                    {% if v.name == 'Shiva Express' %}selected{% endif %}>
+                            {{ v.name }}
+                            </option>
                             {% endfor %}
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
@@ -67,11 +70,11 @@
                 <div class="grid grid-cols-2 gap-3 md:col-span-2">
                     <div>
                         <label class="block text-xs uppercase text-gray-500 mb-1">From</label>
-                        <input type="text" name="from" value="Udupi" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
+                        <input type="text" name="from" value="Mumbai" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
                     </div>
                     <div>
                         <label class="block text-xs uppercase text-gray-500 mb-1">To</label>
-                        <input type="text" name="to" value="Mumbai" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
+                        <input type="text" name="to" value="Udupi" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
                     </div>
                 </div>
             </div>

@@ -7,37 +7,30 @@ from sqlalchemy import func
 
 core_bp = Blueprint('core', __name__)
 
-# --- HELPER: Fixes "could not convert string to float" error ---
+# --- SAFE CONVERTERS ---
 def safe_float(value):
     try:
-        if not value or value.strip() == '':
-            return 0.0
+        if not value or value.strip() == '': return 0.0
         return float(value)
-    except (ValueError, TypeError):
-        return 0.0
+    except: return 0.0
 
 def safe_int(value):
     try:
-        if not value or value.strip() == '':
-            return 0
+        if not value or value.strip() == '': return 0
         return int(value)
-    except (ValueError, TypeError):
-        return 0
+    except: return 0
 
 @core_bp.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
     today = date.today()
-
     if request.method == 'POST':
         try:
-            # 1. Get Values Safely
             handling = safe_float(request.form.get('handling'))
             railway = safe_float(request.form.get('railway'))
             transport = safe_float(request.form.get('transport'))
             parcels = safe_int(request.form.get('parcels'))
 
-            # 2. Create Entry
             new_entry = Entry(
                 date=datetime.strptime(request.form['date'], '%Y-%m-%d'),
                 bill_no=f"B-{datetime.now().strftime('%d%H%M')}",
@@ -58,27 +51,25 @@ def home():
         except Exception as e:
             flash(f'Error: {str(e)}')
 
-    # Stats for today
     today_entries = Entry.query.filter_by(date=today).all()
     today_rev = sum(e.total for e in today_entries)
     today_parcels = sum(e.parcels for e in today_entries)
 
-    return render_template('home.html',
-                           today=today,
-                           vendors=Vendor.query.all(),
-                           today_rev=today_rev,
-                           today_parcels=today_parcels)
+    return render_template('home.html', today=today, vendors=Vendor.query.all(), today_rev=today_rev, today_parcels=today_parcels)
 
 @core_bp.route('/view', methods=['GET'])
 @login_required
 def view_data():
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    vendor_filter = request.args.get('vendor')
+
+    # DEFAULT TO SHIVA EXPRESS if no vendor selected
+    vendor_filter = request.args.get('vendor', 'Shiva Express')
+
     search_q = request.args.get('q')
 
     query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
 
-    if vendor_filter and vendor_filter != '':
+    if vendor_filter:
         query = query.filter_by(vendor=vendor_filter)
 
     if search_q:
@@ -97,6 +88,19 @@ def view_data():
                            search_query=search_q,
                            vendors=Vendor.query.all())
 
+# --- NEW: ADMIN FULL VIEW ---
+@core_bp.route('/admin_view', methods=['GET'])
+@login_required
+def admin_view():
+    if not current_user.is_admin:
+        flash("Admins only.")
+        return redirect(url_for('core.view_data'))
+
+    month = request.args.get('month', datetime.today().strftime('%Y-%m'))
+    entries = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month).order_by(Entry.date.desc()).all()
+
+    return render_template('admin_view.html', entries=entries, month=month)
+
 @core_bp.route('/delete/<int:id>')
 @login_required
 def delete_entry(id):
@@ -104,6 +108,9 @@ def delete_entry(id):
     db.session.delete(entry)
     db.session.commit()
     flash('Entry Deleted')
+    # Redirect back to where they came from (Admin view or Normal view)
+    if request.referrer and 'admin_view' in request.referrer:
+        return redirect(url_for('core.admin_view'))
     return redirect(url_for('core.view_data'))
 
 @core_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -117,13 +124,10 @@ def edit_entry(id):
             entry.rr_no = request.form['rr_no']
             entry.ship_from = request.form['from']
             entry.ship_to = request.form['to']
-
-            # Use safe converters here too
             entry.parcels = safe_int(request.form.get('parcels'))
             entry.handling_chg = safe_float(request.form.get('handling'))
             entry.railway_chg = safe_float(request.form.get('railway'))
             entry.transport_chg = safe_float(request.form.get('transport'))
-
             entry.total = entry.handling_chg + entry.railway_chg + entry.transport_chg
 
             db.session.commit()
@@ -131,5 +135,4 @@ def edit_entry(id):
             return redirect(url_for('core.view_data'))
         except Exception as e:
             flash(f"Error: {str(e)}")
-
     return render_template('edit.html', entry=entry, vendors=Vendor.query.all())
