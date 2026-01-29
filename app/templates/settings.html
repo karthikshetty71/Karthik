@@ -9,7 +9,7 @@
                 <p class="text-xs text-gray-400">Manage internal names and legal billing details.</p>
             </div>
             {% if not current_user.is_admin %}
-            <span class="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded border border-gray-600">View Only Mode</span>
+            <span class="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded border border-yellow-500/30 uppercase tracking-widest font-bold">Read Only</span>
             {% endif %}
         </div>
 
@@ -71,11 +71,12 @@
                             <button type="submit" class="text-blue-500 text-xs border border-blue-500/30 px-2 py-1 rounded hover:bg-blue-600 hover:text-white">SAVE</button>
                         </td>
                     </form>
+
                     {% else %}
                     <td class="p-3 text-gray-300">{{ v.billing_name or '-' }}</td>
                     <td class="p-3 text-gray-300">{{ v.billing_address or '-' }}</td>
-                    <td class="p-3 text-center text-green-400">{{ v.rate_per_parcel }}</td>
-                    <td class="p-3 text-center text-blue-400">{{ v.transport_rate }}</td>
+                    <td class="p-3 text-center text-green-400 font-mono">{{ v.rate_per_parcel }}</td>
+                    <td class="p-3 text-center text-blue-400 font-mono">{{ v.transport_rate }}</td>
                     {% endif %}
                 </tr>
                 {% endfor %}

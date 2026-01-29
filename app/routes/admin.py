@@ -4,16 +4,15 @@ from app.models import Vendor, User
 from app.extensions import db
 import os
 
-# --- THIS LINE WAS MISSING OR BROKEN ---
 admin_bp = Blueprint('admin', __name__)
-# ---------------------------------------
 
+# --- SETTINGS & VENDOR MASTER ---
 @admin_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
-    # Allow non-admins to VIEW, but not POST
+    # 1. SECURITY: Block non-admins from saving data (POST)
     if request.method == 'POST' and not current_user.is_admin:
-        flash("Access Denied: Admins only.")
+        flash("Read Only Mode: You cannot edit vendor details.")
         return redirect(url_for('admin.settings'))
 
     if request.method == 'POST':
@@ -22,7 +21,7 @@ def settings():
         rate = float(request.form.get('rate', 70.0))
         transport = float(request.form.get('transport', 0.0))
 
-        # New Fields
+        # New Billing Fields
         bill_name = request.form.get('billing_name')
         bill_addr = request.form.get('billing_address')
 
@@ -34,8 +33,8 @@ def settings():
                     name=name,
                     rate_per_parcel=rate,
                     transport_rate=transport,
-                    billing_name=bill_name,     # Save
-                    billing_address=bill_addr   # Save
+                    billing_name=bill_name,
+                    billing_address=bill_addr
                 ))
                 db.session.commit()
                 flash(f"Vendor '{name}' added successfully.")
@@ -47,8 +46,9 @@ def settings():
 @admin_bp.route('/update_vendor_rate/<int:id>', methods=['POST'])
 @login_required
 def update_vendor_rate(id):
+    # Strict Admin Check
     if not current_user.is_admin:
-        flash("Admins only.")
+        flash("Access Denied.")
         return redirect(url_for('admin.settings'))
 
     vendor = Vendor.query.get_or_404(id)
@@ -69,13 +69,15 @@ def update_vendor_rate(id):
 @admin_bp.route('/set_default_vendor/<int:id>')
 @login_required
 def set_default_vendor(id):
+    # Strict Admin Check
     if not current_user.is_admin:
-        return redirect(url_for('core.home'))
+        flash("Access Denied.")
+        return redirect(url_for('admin.settings'))
 
-    # 1. Reset all vendors to False
+    # 1. Reset all to False
     Vendor.query.update({Vendor.is_default: False})
 
-    # 2. Set selected vendor to True
+    # 2. Set new default
     vendor = Vendor.query.get_or_404(id)
     vendor.is_default = True
 
@@ -86,8 +88,10 @@ def set_default_vendor(id):
 @admin_bp.route('/delete_vendor/<int:id>')
 @login_required
 def delete_vendor(id):
+    # Strict Admin Check
     if not current_user.is_admin:
-        return redirect(url_for('core.home'))
+        flash("Access Denied.")
+        return redirect(url_for('admin.settings'))
 
     v = Vendor.query.get_or_404(id)
     db.session.delete(v)
@@ -95,7 +99,7 @@ def delete_vendor(id):
     flash(f"Deleted vendor: {v.name}")
     return redirect(url_for('admin.settings'))
 
-# --- USER MANAGEMENT ---
+# --- USER MANAGEMENT (ADMINS ONLY) ---
 @admin_bp.route('/users', methods=['GET', 'POST'])
 @login_required
 def users():
@@ -111,11 +115,11 @@ def users():
             if User.query.filter_by(username=username).first():
                 flash('User already exists')
             else:
-                new_user = User(username=username, is_admin=False) # Default to non-admin
+                new_user = User(username=username, is_admin=False)
                 new_user.set_password(password)
                 db.session.add(new_user)
                 db.session.commit()
-                flash(f'User {username} added successfully')
+                flash(f'User {username} added')
         return redirect(url_for('admin.users'))
 
     users = User.query.all()
@@ -137,7 +141,7 @@ def delete_user(id):
     flash(f'User {user.username} deleted')
     return redirect(url_for('admin.users'))
 
-# --- BACKUP ---
+# --- BACKUP (ADMINS ONLY) ---
 @admin_bp.route('/backup')
 @login_required
 def backup():
@@ -145,12 +149,15 @@ def backup():
         return redirect(url_for('core.home'))
 
     db_filename = 'logistics.db'
-    db_path_root = os.path.join(os.getcwd(), db_filename)
-    db_path_instance = os.path.join(os.getcwd(), 'instance', db_filename)
 
-    if os.path.exists(db_path_root):
-        return send_file(db_path_root, as_attachment=True)
-    elif os.path.exists(db_path_instance):
-        return send_file(db_path_instance, as_attachment=True)
-    else:
-        return "Database file not found", 404
+    # Try multiple locations to find the DB
+    paths = [
+        os.path.join(os.getcwd(), db_filename),
+        os.path.join(os.getcwd(), 'instance', db_filename)
+    ]
+
+    for path in paths:
+        if os.path.exists(path):
+            return send_file(path, as_attachment=True)
+
+    return "Database file not found", 404
