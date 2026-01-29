@@ -24,7 +24,7 @@ def generate_bill():
         flash("Please select month and vendor")
         return redirect(url_for('invoices.selection'))
 
-    # 1. Fetch Vendor Details for Header
+    # 1. Fetch Vendor Details & Settings
     vendor_obj = Vendor.query.filter_by(name=vendor_name).first()
 
     # Determine Display Name & Address (Fallback if empty)
@@ -49,15 +49,16 @@ def generate_bill():
     invoice_no = f"INV-{month.replace('-','')}-{datetime.now().strftime('%d%H')}"
     display_month = datetime.strptime(month, '%Y-%m').strftime('%B %Y')
 
-    # 5. Convert to Words (Indian Format approximation)
+    # 5. Convert to Words
     try:
         total_words = num2words(grand_total, lang='en_IN') + " Rupees Only"
     except:
         total_words = f"{grand_total} Rupees Only"
 
     return render_template('invoice_print.html',
-                           vendor=display_name,     # Pass the specific Billing Name
-                           address=display_address, # Pass the specific Address
+                           vendor=display_name,
+                           address=display_address,
+                           vendor_settings=vendor_obj,  # PASS THIS FOR COLUMN LOGIC
                            entries=entries,
                            month=display_month,
                            invoice_no=invoice_no,

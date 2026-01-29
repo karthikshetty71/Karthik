@@ -18,23 +18,24 @@ def settings():
     if request.method == 'POST':
         # Add New Vendor Logic
         name = request.form.get('vendor_name')
-        rate = float(request.form.get('rate', 70.0))
-        transport = float(request.form.get('transport', 0.0))
-
-        # New Billing Fields
-        bill_name = request.form.get('billing_name')
-        bill_addr = request.form.get('billing_address')
 
         if name:
             if Vendor.query.filter_by(name=name).first():
                 flash(f"Vendor '{name}' already exists.")
             else:
+                # Create Vendor with all fields
                 db.session.add(Vendor(
                     name=name,
-                    rate_per_parcel=rate,
-                    transport_rate=transport,
-                    billing_name=bill_name,
-                    billing_address=bill_addr
+                    rate_per_parcel=float(request.form.get('rate', 70.0)),
+                    transport_rate=float(request.form.get('transport', 0.0)),
+                    billing_name=request.form.get('billing_name'),
+                    billing_address=request.form.get('billing_address'),
+
+                    # Default Visibility: All True for new vendors
+                    show_rr=True,
+                    show_handling=True,
+                    show_railway=True,
+                    show_transport=True
                 ))
                 db.session.commit()
                 flash(f"Vendor '{name}' added successfully.")
@@ -53,20 +54,25 @@ def update_vendor_rate(id):
 
     vendor = Vendor.query.get_or_404(id)
     try:
+        # Standard Fields
         vendor.rate_per_parcel = float(request.form.get('rate'))
         vendor.transport_rate = float(request.form.get('transport'))
-
-        # Update Billing Details
         vendor.billing_name = request.form.get('billing_name')
         vendor.billing_address = request.form.get('billing_address')
 
+        # Column Visibility (Checkboxes send 'on' if checked, None if unchecked)
+        vendor.show_rr = True if request.form.get('show_rr') else False
+        vendor.show_handling = True if request.form.get('show_handling') else False
+        vendor.show_railway = True if request.form.get('show_railway') else False
+        vendor.show_transport = True if request.form.get('show_transport') else False
+
         db.session.commit()
         flash(f"Updated details for {vendor.name}")
-    except:
-        flash("Error updating. Please check inputs.")
+    except Exception as e:
+        flash(f"Error updating: {str(e)}")
     return redirect(url_for('admin.settings'))
 
-@admin_bp.route('/set_default_vendor/<int:id>')
+@admin_bp.route('/set_default_vendor/<int:id>', methods=['GET'])
 @login_required
 def set_default_vendor(id):
     # Strict Admin Check

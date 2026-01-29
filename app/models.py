@@ -23,6 +23,10 @@ class Vendor(db.Model):
     rate_per_parcel = db.Column(db.Float, default=70.0) # Handling Rate
     transport_rate = db.Column(db.Float, default=0.0)   # NEW: Transport Flat Rate
     is_default = db.Column(db.Boolean, default=False)
+    show_rr = db.Column(db.Boolean, default=True)
+    show_handling = db.Column(db.Boolean, default=True)
+    show_railway = db.Column(db.Boolean, default=True)
+    show_transport = db.Column(db.Boolean, default=True)
 
 class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)

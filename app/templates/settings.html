@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-6xl mx-auto mt-6 md:mt-10 px-4">
+<div class="max-w-7xl mx-auto mt-6 md:mt-10 px-4">
     <div class="glass p-6 md:p-8 rounded-2xl min-h-[80vh]">
 
         <div class="mb-8 border-b border-gray-700 pb-4 flex justify-between items-end">
             <div>
                 <h2 class="text-3xl font-bold text-white mb-1">Vendor Master</h2>
-                <p class="text-xs text-gray-400">Manage internal names and legal billing details.</p>
+                <p class="text-xs text-gray-400">Manage rates, billing details, and PDF settings.</p>
             </div>
             {% if not current_user.is_admin %}
             <span class="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded border border-yellow-500/30 uppercase tracking-widest font-bold">Read Only</span>
@@ -16,17 +16,19 @@
         {% if current_user.is_admin %}
         <div class="bg-black/20 p-4 rounded-xl border border-white/5 mb-8">
             <h3 class="text-xs uppercase text-blue-400 font-bold mb-3 tracking-wider">Add New Vendor</h3>
-            <form method="POST" class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                <input type="text" name="vendor_name" placeholder="Internal Name (e.g. Shiva)" required class="bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
-                <input type="text" name="billing_name" placeholder="Legal Bill Name (e.g. M/S Shiva...)" class="bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
-                <input type="text" name="billing_address" placeholder="Billing Address" class="bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
+            <form method="POST" class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                <div class="col-span-1 md:col-span-2">
+                    <input type="text" name="vendor_name" placeholder="Internal Name (e.g. Shiva)" required class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
+                </div>
+                <input type="text" name="billing_name" placeholder="Legal Bill Name" class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
+                <input type="text" name="billing_address" placeholder="Billing Address" class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
 
                 <div class="grid grid-cols-2 gap-2">
                     <input type="number" step="0.1" name="rate" placeholder="Rate" required class="bg-black/40 border border-gray-700 rounded p-2 text-white text-sm text-center">
                     <input type="number" step="0.1" name="transport" placeholder="Trans" required class="bg-black/40 border border-gray-700 rounded p-2 text-white text-sm text-center">
                 </div>
 
-                <button type="submit" class="bg-green-600 font-bold text-white rounded p-2 hover:bg-green-500 text-xs uppercase">
+                <button type="submit" class="bg-green-600 font-bold text-white rounded p-2 hover:bg-green-500 text-xs uppercase w-full">
                     + Add
                 </button>
             </form>
@@ -38,19 +40,19 @@
                 <thead class="text-xs uppercase bg-black/40 text-gray-500 font-bold">
                 <tr>
                     <th class="p-3">Internal Name</th>
-                    <th class="p-3">Billing Name (On PDF)</th>
-                    <th class="p-3">Address (On PDF)</th>
-                    <th class="p-3 text-center">Rate</th>
+                    <th class="p-3">Billing Name</th>
+                    <th class="p-3">Address</th>
+                    <th class="p-3 text-center">PDF Columns</th> <th class="p-3 text-center">Rate</th>
                     <th class="p-3 text-center">Trans</th>
                     {% if current_user.is_admin %}<th class="p-3 text-right">Action</th>{% endif %}
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-800 bg-black/10">
                 {% for v in vendors %}
-                <tr class="hover:bg-white/5 transition">
+                <tr class="hover:bg-white/5 transition align-top">
 
                     <td class="p-3">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 mt-2">
                             {% if current_user.is_admin %}
                             <a href="/set_default_vendor/{{ v.id }}" class="text-lg {{ 'text-yellow-400' if v.is_default else 'text-gray-700 hover:text-yellow-400' }}">★</a>
                             {% endif %}
@@ -63,19 +65,46 @@
 
                     {% if current_user.is_admin %}
                     <form action="/update_vendor_rate/{{ v.id }}" method="POST">
-                        <td class="p-3"><input type="text" name="billing_name" value="{{ v.billing_name or '' }}" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs focus:border-blue-500 outline-none"></td>
-                        <td class="p-3"><input type="text" name="billing_address" value="{{ v.billing_address or '' }}" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs focus:border-blue-500 outline-none"></td>
-                        <td class="p-3 text-center"><input type="number" step="0.1" name="rate" value="{{ v.rate_per_parcel }}" class="w-16 bg-transparent border-b border-gray-700 text-green-400 text-center outline-none"></td>
-                        <td class="p-3 text-center"><input type="number" step="0.1" name="transport" value="{{ v.transport_rate }}" class="w-16 bg-transparent border-b border-gray-700 text-blue-400 text-center outline-none"></td>
-                        <td class="p-3 text-right whitespace-nowrap">
+                        <td class="p-3"><textarea name="billing_name" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs focus:border-blue-500 outline-none h-8">{{ v.billing_name or '' }}</textarea></td>
+                        <td class="p-3"><textarea name="billing_address" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs focus:border-blue-500 outline-none h-8">{{ v.billing_address or '' }}</textarea></td>
+
+                        <td class="p-3">
+                            <div class="grid grid-cols-2 gap-x-2 gap-y-1 bg-black/20 p-2 rounded border border-gray-800 w-32">
+                                <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer hover:text-white">
+                                    <input type="checkbox" name="show_rr" {% if v.show_rr %}checked{% endif %} class="accent-green-500"> RR No
+                                </label>
+                                <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer hover:text-white">
+                                    <input type="checkbox" name="show_handling" {% if v.show_handling %}checked{% endif %} class="accent-green-500"> Hndl
+                                </label>
+                                <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer hover:text-white">
+                                    <input type="checkbox" name="show_railway" {% if v.show_railway %}checked{% endif %} class="accent-green-500"> Rail
+                                </label>
+                                <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer hover:text-white">
+                                    <input type="checkbox" name="show_transport" {% if v.show_transport %}checked{% endif %} class="accent-green-500"> Trans
+                                </label>
+                            </div>
+                        </td>
+
+                        <td class="p-3 text-center"><input type="number" step="0.1" name="rate" value="{{ v.rate_per_parcel }}" class="w-14 bg-transparent border-b border-gray-700 text-green-400 text-center outline-none mt-2"></td>
+                        <td class="p-3 text-center"><input type="number" step="0.1" name="transport" value="{{ v.transport_rate }}" class="w-14 bg-transparent border-b border-gray-700 text-blue-400 text-center outline-none mt-2"></td>
+
+                        <td class="p-3 text-right whitespace-nowrap pt-4">
                             <button type="submit" class="text-blue-500 text-xs border border-blue-500/30 px-2 py-1 rounded hover:bg-blue-600 hover:text-white mr-1">SAVE</button>
-                            <a href="/delete_vendor/{{ v.id }}" class="text-red-500 text-xs border border-red-500/30 px-2 py-1 rounded hover:bg-red-600 hover:text-white" onclick="return confirm('Delete {{ v.name }}? This cannot be undone.')">DEL</a>
+                            <a href="/delete_vendor/{{ v.id }}" class="text-red-500 text-xs border border-red-500/30 px-2 py-1 rounded hover:bg-red-600 hover:text-white" onclick="return confirm('Delete {{ v.name }}?')">DEL</a>
                         </td>
                     </form>
 
                     {% else %}
-                    <td class="p-3 text-gray-300">{{ v.billing_name or '-' }}</td>
-                    <td class="p-3 text-gray-300">{{ v.billing_address or '-' }}</td>
+                    <td class="p-3 text-gray-300 text-xs">{{ v.billing_name or '-' }}</td>
+                    <td class="p-3 text-gray-300 text-xs">{{ v.billing_address or '-' }}</td>
+                    <td class="p-3">
+                        <div class="flex flex-wrap gap-1">
+                            {% if v.show_rr %}<span class="text-[9px] bg-gray-700 text-gray-300 px-1 rounded">RR</span>{% endif %}
+                            {% if v.show_handling %}<span class="text-[9px] bg-gray-700 text-gray-300 px-1 rounded">HNDL</span>{% endif %}
+                            {% if v.show_railway %}<span class="text-[9px] bg-gray-700 text-gray-300 px-1 rounded">RAIL</span>{% endif %}
+                            {% if v.show_transport %}<span class="text-[9px] bg-gray-700 text-gray-300 px-1 rounded">TRNS</span>{% endif %}
+                        </div>
+                    </td>
                     <td class="p-3 text-center text-green-400 font-mono">{{ v.rate_per_parcel }}</td>
                     <td class="p-3 text-center text-blue-400 font-mono">{{ v.transport_rate }}</td>
                     {% endif %}
