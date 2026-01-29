@@ -9,7 +9,6 @@
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0f0f10; color: #e0e0e0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .neon-text { text-shadow: 0 0 10px rgba(0, 255, 157, 0.5); color: #00ff9d; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -31,17 +30,9 @@
                     <a href="/view" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'core.view_data' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">DATA</a>
                     <a href="/invoices" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'reports.invoices' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">INVOICE</a>
                     <a href="/analytics" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'reports.analytics' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">ANALYTICS</a>
-                    <a href="/settings" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'admin.settings' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">VENDORS</a>
-                </div>
 
-                {% if current_user.is_admin %}
-                <div class="flex items-center gap-3 border-l border-gray-700 pl-4">
-                    <a href="/users" class="text-gray-400 hover:text-white transition flex items-center gap-1 text-xs font-bold uppercase" title="Manage Users">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                        Users
-                    </a>
+                    <a href="/settings" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'admin.settings' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">SETTINGS</a>
                 </div>
-                {% endif %}
 
                 <a href="/logout" class="text-red-500 hover:text-red-400 text-xs font-bold border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500/10 transition">LOGOUT</a>
             </div>
@@ -71,18 +62,10 @@
             <a href="/analytics" class="block px-3 py-3 rounded-md text-sm font-bold {{ 'bg-blue-600 text-white' if request.endpoint == 'reports.analytics' else 'text-gray-300 hover:bg-white/5' }}">
                 📈 Analytics
             </a>
-            <a href="/settings" class="block px-3 py-3 rounded-md text-sm font-bold {{ 'bg-blue-600 text-white' if request.endpoint == 'admin.settings' else 'text-gray-300 hover:bg-white/5' }}">
-                ⚙️ Vendor Settings
-            </a>
 
-            {% if current_user.is_admin %}
-            <div class="border-t border-gray-800 mt-2 pt-2">
-                <p class="px-3 text-xs uppercase text-gray-500 font-bold mb-1">Admin Controls</p>
-                <a href="/users" class="block px-3 py-3 rounded-md text-sm font-bold text-gray-300 hover:bg-white/5">
-                    👥 Manage Users
-                </a>
-            </div>
-            {% endif %}
+            <a href="/settings" class="block px-3 py-3 rounded-md text-sm font-bold {{ 'bg-blue-600 text-white' if request.endpoint == 'admin.settings' else 'text-gray-300 hover:bg-white/5' }}">
+                ⚙️ Settings
+            </a>
 
             <a href="/logout" class="block px-3 py-3 rounded-md text-sm font-bold text-red-500 hover:bg-red-500/10 mt-2">
                 🚪 Logout
