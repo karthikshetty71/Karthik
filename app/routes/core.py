@@ -61,10 +61,7 @@ def home():
 @login_required
 def view_data():
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-
-    # --- FIX: Default to 'Shiva Express' if no vendor is selected ---
-    vendor_filter = request.args.get('vendor', 'Shiva Express')
-
+    vendor_filter = request.args.get('vendor', 'Shiva Express') # Default: Shiva Express
     search_q = request.args.get('q')
 
     query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
@@ -97,8 +94,21 @@ def admin_view():
         return redirect(url_for('core.view_data'))
 
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    entries = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month).order_by(Entry.date.desc()).all()
-    return render_template('admin_view.html', entries=entries, month=month)
+    vendor_filter = request.args.get('vendor', 'All') # Default: All Vendors
+
+    query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
+
+    # Filter by vendor if not "All"
+    if vendor_filter and vendor_filter != 'All':
+        query = query.filter_by(vendor=vendor_filter)
+
+    entries = query.order_by(Entry.date.desc()).all()
+
+    return render_template('admin_view.html',
+                           entries=entries,
+                           month=month,
+                           selected_vendor=vendor_filter,
+                           vendors=Vendor.query.all())
 
 @core_bp.route('/delete/<int:id>')
 @login_required
@@ -130,7 +140,12 @@ def edit_entry(id):
 
             db.session.commit()
             flash('Entry Updated')
+
+            # Smart Redirect: Go back to admin view if that's where we came from
+            if request.referrer and 'admin_view' in request.referrer:
+                return redirect(url_for('core.admin_view'))
             return redirect(url_for('core.view_data'))
+
         except Exception as e:
             flash(f"Error: {str(e)}")
     return render_template('edit.html', entry=entry, vendors=Vendor.query.all())
