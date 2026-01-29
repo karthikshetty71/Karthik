@@ -2,75 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KPS Logistics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Karthik Parcel Service</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #050505; color: white; font-family: 'Inter', sans-serif; }
-        
-        /* GRAPHICS: Enhanced Glassmorphism */
-        .glass { 
-            background: rgba(25, 25, 25, 0.6); 
-            backdrop-filter: blur(16px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-        }
-
-        /* GRAPHICS: Custom Cyberpunk Scrollbar */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
+        body { background-color: #0f0f10; color: #e0e0e0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .neon-text { text-shadow: 0 0 10px rgba(0, 255, 157, 0.5); color: #00ff9d; }
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0a0a0a; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #00ff9d; box-shadow: 0 0 10px #00ff9d; }
-
-        /* GRAPHICS: Neon Text Glow */
-        .neon-text { text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-
-        .nav-link { opacity: 0.6; transition: 0.3s; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.8rem; font-weight: 600; }
-        .nav-link:hover { opacity: 1; color: #00ff9d; text-shadow: 0 0 8px rgba(0,255,157,0.4); }
+        ::-webkit-scrollbar-track { background: #0f0f10; }
+        ::-webkit-scrollbar-thumb { background: #333; rounded: 4px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-green-500 selection:text-black">
+<body class="flex flex-col min-h-screen">
 
-    <div class="fixed inset-0 z-[-1]">
-        <div class="absolute inset-0 bg-cover bg-center opacity-40" style="background-image: url('{{ url_for('static', filename='images/railway-bg.jpg') }}');"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
-    </div>
+<nav class="border-b border-gray-800 bg-black/50 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+            <a href="/" class="flex items-center gap-2 group">
+                <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-600 rounded flex items-center justify-center font-bold text-black text-xs group-hover:scale-110 transition">KPS</div>
+                <span class="font-bold tracking-tight text-white hidden md:block">LOGISTICS</span>
+            </a>
 
-    {% if current_user.is_authenticated %}
-    <nav class="border-b border-white/5 bg-black/40 backdrop-blur-xl px-8 py-4 flex justify-between items-center sticky top-0 z-50">
-        <a href="/" class="flex items-center gap-3 text-xl font-bold tracking-tighter uppercase text-white hover:text-green-400 transition group">
-            <div class="bg-white/10 p-1.5 rounded group-hover:bg-green-500/20 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="M8 19l-2 3"/><path d="M16 19l2 3"/><circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/></svg>
+            {% if current_user.is_authenticated %}
+            <div class="flex gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
+                <a href="/" class="px-3 md:px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'core.home' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">ENTRY</a>
+                <a href="/view" class="px-3 md:px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'core.view_data' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">DATA</a>
+                <a href="/invoices" class="hidden md:block px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'reports.invoices' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">INVOICE</a>
             </div>
-            <span class="neon-text">Karthik Parcel Service</span>
-        </a>
-        
-        <div class="flex gap-6 items-center text-sm">
-            <a href="/" class="nav-link">Quick Add</a>
-            <a href="/view" class="nav-link">Records</a>
-            <a href="/analytics" class="nav-link">Analytics</a>
-            <a href="/invoices" class="nav-link">Invoices</a>
-            <a href="/settings" class="nav-link">Settings</a>
-            {% if current_user.is_admin %}
-                <a href="/admin/users" class="nav-link text-yellow-400/80 hover:text-yellow-300">Users</a>
-            {% endif %}
-            <a href="/logout" class="nav-link text-red-400/80 hover:text-red-300 ml-4 border-l border-white/10 pl-6">Logout</a>
-        </div>
-    </nav>
-    {% endif %}
 
-    <div class="flex-1 max-w-7xl mx-auto w-full p-6 md:p-8">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="mb-6 bg-green-500/10 text-green-300 p-4 rounded-lg border border-green-500/20 text-center backdrop-blur shadow-[0_0_15px_rgba(0,255,0,0.1)]">
-                    {{ messages[0] }}
-                </div>
+            <div class="flex items-center gap-4">
+                {% if current_user.is_admin %}
+                <a href="/settings" class="text-gray-400 hover:text-white transition" title="Settings">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </a>
+                {% endif %}
+                <a href="/logout" class="text-red-500 hover:text-red-400 text-xs font-bold border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500/10 transition">LOGOUT</a>
+            </div>
             {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
+        </div>
     </div>
+</nav>
+
+<div class="flex-grow px-4 pb-8">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="max-w-md mx-auto mt-4 space-y-2">
+        {% for message in messages %}
+        <div class="bg-blue-500/20 border border-blue-500/50 text-blue-200 px-4 py-3 rounded text-sm text-center">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
 
 </body>
 </html>
