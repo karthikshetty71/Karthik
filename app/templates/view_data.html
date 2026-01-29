@@ -2,16 +2,9 @@
 {% block content %}
 
 <style>
-    input[type="month"] {
-        cursor: pointer;
-    }
     input[type="month"]::-webkit-calendar-picker-indicator {
-        filter: invert(1); /* Makes icon white */
+        filter: invert(1); /* Turns black icon to white */
         cursor: pointer;
-        opacity: 0.6;
-    }
-    input[type="month"]::-webkit-calendar-picker-indicator:hover {
-        opacity: 1;
     }
 </style>
 
@@ -48,8 +41,9 @@
 
                 <input type="month" name="month" value="{{ month }}"
                        onchange="this.form.submit()"
-                       onclick="this.showPicker()"
-                       class="bg-transparent text-white px-2 outline-none text-xs [color-scheme:dark] flex-1 md:flex-none cursor-pointer">
+                       onclick="try{this.showPicker()}catch(e){}"
+                       onfocus="try{this.showPicker()}catch(e){}"
+                       class="bg-transparent text-white px-2 outline-none text-xs flex-1 md:flex-none cursor-pointer">
 
                 <div class="w-px bg-gray-600 h-4 mx-1"></div>
 
