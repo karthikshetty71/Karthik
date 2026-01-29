@@ -29,7 +29,7 @@ def home():
 
     if request.method == 'POST':
         try:
-            # 1. Get Vendor (By Name, from the select dropdown)
+            # 1. Get Vendor
             vendor_name = request.form.get('vendor')
             vendor_obj = Vendor.query.filter_by(name=vendor_name).first()
             if not vendor_obj:
@@ -68,7 +68,7 @@ def home():
         except Exception as e:
             flash(f'Error: {str(e)}')
 
-    # Stats for Dashboard
+    # Stats
     today_entries = Entry.query.filter_by(date=today).all()
     today_rev = sum(e.grand_total for e in today_entries)
     today_parcels = sum(e.parcels for e in today_entries)
@@ -80,21 +80,29 @@ def home():
                            today_rev=today_rev,
                            today_parcels=today_parcels)
 
-# --- 2. VIEW DATA ---
+# --- 2. VIEW DATA (Modified for Modes) ---
 @core_bp.route('/view', methods=['GET'])
 @login_required
 def view_data():
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
     vendor_id = request.args.get('vendor')
+    mode = request.args.get('mode', 'normal') # Default to normal
 
-    # --- LOGIC: Handle Default Vendor ---
-    # If no vendor is explicitly selected in the URL, try to find the default one.
+    # Determine if Admin Mode is active
+    admin_mode = (mode == 'admin' and current_user.is_admin)
+
+    # --- DEFAULT SELECTION LOGIC ---
     if not vendor_id:
-        default_vendor = Vendor.query.filter_by(is_default=True).first()
-        if default_vendor:
-            vendor_id = str(default_vendor.id)
-        else:
+        if admin_mode:
+            # In Admin Mode, default to 'All'
             vendor_id = 'All'
+        else:
+            # In Normal Mode, find the Default Vendor
+            default_vendor = Vendor.query.filter_by(is_default=True).first()
+            if default_vendor:
+                vendor_id = str(default_vendor.id)
+            else:
+                vendor_id = 'All' # Fallback
 
     # Build Query
     query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
@@ -109,7 +117,8 @@ def view_data():
                            entries=entries,
                            month=month,
                            vendor=vendor_id,
-                           vendors=vendors)
+                           vendors=vendors,
+                           admin_mode=admin_mode)
 
 # --- 3. DELETE ENTRY ---
 @core_bp.route('/entry/delete/<int:id>')
@@ -121,10 +130,11 @@ def delete_entry(id):
     flash('Entry Deleted')
 
     if request.referrer and 'view' in request.referrer:
-        return redirect(url_for('core.view_data'))
+        # Preserve the mode if possible, but simplest is to go back to view
+        return redirect(request.referrer)
     return redirect(url_for('core.home'))
 
-# --- 4. ADMIN VIEW (Redirect) ---
+# --- 4. ADMIN VIEW REDIRECT ---
 @core_bp.route('/admin_view')
 @login_required
 def admin_view():
@@ -132,6 +142,35 @@ def admin_view():
         flash("Admins only.")
         return redirect(url_for('core.home'))
 
-    # Redirect to view_data but force 'All' vendors selected
+    # Redirect to view with mode=admin
     today = datetime.today().strftime('%Y-%m')
-    return redirect(url_for('core.view_data', month=today, vendor='All'))
+    return redirect(url_for('core.view_data', month=today, mode='admin', vendor='All'))
+
+# --- 5. EDIT ENTRY ROUTE (Needed for the edit button) ---
+@core_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_entry(id):
+    entry = Entry.query.get_or_404(id)
+    vendors = Vendor.query.all()
+
+    if request.method == 'POST':
+        # Simple update logic matching the Quick Entry fields
+        try:
+             entry.date = datetime.strptime(request.form['date'], '%Y-%m-%d')
+             entry.vendor_id = int(request.form['vendor']) # Using ID now
+             entry.rr_no = request.form['rr_no']
+             entry.ship_from = request.form['from']
+             entry.ship_to = request.form['to']
+             entry.parcels = safe_int(request.form['parcels'])
+
+             # Recalculate charges if needed, or take from form
+             # For simplicity, let's assume simple editing updates just the core fields
+             # or specific charges if you add inputs for them in edit.html
+
+             db.session.commit()
+             flash("Entry Updated")
+             return redirect(url_for('core.view_data'))
+        except Exception as e:
+            flash(f"Error: {e}")
+
+    return render_template('edit.html', entry=entry, vendors=vendors)

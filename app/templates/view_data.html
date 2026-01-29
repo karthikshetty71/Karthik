@@ -4,7 +4,9 @@
 
     <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-8 gap-6">
         <div class="text-center md:text-left">
-            <h2 class="text-3xl font-bold mb-1 neon-text">Records</h2>
+            <h2 class="text-3xl font-bold mb-1 neon-text">
+                {% if admin_mode %}<span class="text-purple-400">Admin</span> Records{% else %}Records{% endif %}
+            </h2>
             <p class="text-gray-400 text-sm">Showing data for: <span class="text-white font-bold">
                 {% if vendor == 'All' %}All Vendors{% else %}Selected Vendor{% endif %}
             </span></p>
@@ -13,20 +15,33 @@
         <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto items-stretch md:items-center">
 
             {% if current_user.is_admin %}
-            <a href="/admin_view" class="bg-purple-600/20 text-purple-300 border border-purple-500/30 px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-purple-600/40 transition text-center flex items-center justify-center gap-2">
+            {% if admin_mode %}
+            <a href="/view?mode=normal&month={{ month }}" class="bg-blue-600/20 text-blue-300 border border-blue-500/30 px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-blue-600/40 transition text-center flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Switch to Normal View
+            </a>
+            {% else %}
+            <a href="/view?mode=admin&month={{ month }}" class="bg-purple-600/20 text-purple-300 border border-purple-500/30 px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-purple-600/40 transition text-center flex items-center justify-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                 Switch to Admin Master View
             </a>
             {% endif %}
+            {% endif %}
 
             <form class="flex gap-2 bg-black/40 p-1 rounded-lg border border-gray-600 items-center justify-between w-full md:w-auto">
+                <input type="hidden" name="mode" value="{{ 'admin' if admin_mode else 'normal' }}">
+
                 <input type="month" name="month" value="{{ month }}" onchange="this.form.submit()" class="bg-transparent text-white px-2 outline-none text-xs [color-scheme:dark] flex-1 md:flex-none">
 
                 <div class="w-px bg-gray-600 h-4 mx-1"></div>
 
                 <div class="relative flex-1 md:flex-none">
                     <select name="vendor" onchange="this.form.submit()" class="w-full bg-transparent text-white pl-2 pr-6 outline-none text-xs appearance-none cursor-pointer">
+
+                        {% if admin_mode %}
                         <option value="All" {% if vendor == 'All' %}selected{% endif %}>All Vendors</option>
+                        {% endif %}
+
                         {% for v in vendors %}
                         <option value="{{ v.id }}" {% if vendor|string == v.id|string %}selected{% endif %}>{{ v.name }}</option>
                         {% endfor %}
@@ -44,9 +59,13 @@
             <thead class="text-xs uppercase bg-black/40 text-gray-300 font-bold tracking-wider">
             <tr>
                 <th class="px-4 py-4 whitespace-nowrap">Date</th>
+
+                {% if admin_mode %}
                 <th class="px-4 py-4 whitespace-nowrap">Vendor</th>
                 <th class="px-4 py-4 whitespace-nowrap text-blue-400">RR No</th>
                 <th class="px-4 py-4 whitespace-nowrap">Route</th>
+                {% endif %}
+
                 <th class="px-4 py-4 text-center whitespace-nowrap">Parcels</th>
 
                 <th class="px-4 py-4 text-right whitespace-nowrap">Handling</th>
@@ -62,11 +81,11 @@
             <tr class="hover:bg-white/5 transition group">
                 <td class="px-4 py-3 text-white whitespace-nowrap">{{ entry.date.strftime('%d %b') }}</td>
 
+                {% if admin_mode %}
                 <td class="px-4 py-3 text-gray-300">{{ entry.vendor.name }}</td>
-
                 <td class="px-4 py-3 font-mono text-xs text-blue-400 font-bold">{{ entry.rr_no }}</td>
-
                 <td class="px-4 py-3 text-xs">{{ entry.ship_from }} <span class="text-gray-600">→</span> {{ entry.ship_to }}</td>
+                {% endif %}
 
                 <td class="px-4 py-3 text-center text-white font-bold">{{ entry.parcels }}</td>
 
@@ -77,15 +96,21 @@
                 <td class="px-4 py-3 text-right text-white font-bold tracking-wide">₹{{ "{:,.0f}".format(entry.grand_total) }}</td>
 
                 <td class="px-4 py-3 text-center">
-                    <a href="/entry/delete/{{ entry.id }}" onclick="return confirm('Delete this entry?')" class="text-gray-600 hover:text-red-500 px-2 transition" title="Delete">
-                        ✕
-                    </a>
+                    <div class="flex justify-center gap-3">
+                        <a href="/edit/{{ entry.id }}" class="text-blue-500 hover:text-white text-xs font-bold uppercase transition">
+                            Edit
+                        </a>
+                        <a href="/entry/delete/{{ entry.id }}" onclick="return confirm('Delete this entry?')" class="text-red-500 hover:text-white text-xs font-bold uppercase transition">
+                            Delete
+                        </a>
+                    </div>
                 </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="10" class="p-8 text-center text-gray-500 italic border border-dashed border-gray-800 m-4 rounded-lg">
-                    No records found.
+                {% set colspan = 10 if admin_mode else 7 %}
+                <td colspan="{{ colspan }}" class="p-8 text-center text-gray-500 italic border border-dashed border-gray-800 m-4 rounded-lg">
+                    No records found for this selection.
                 </td>
             </tr>
             {% endfor %}
