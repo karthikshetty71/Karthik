@@ -25,7 +25,7 @@
             <tr>
                 <th class="p-3">Vendor</th>
                 <th class="p-3">Billing Info</th>
-                {% if current_user.is_admin %}<th class="p-3 text-center">PDF Columns</th>{% endif %}
+                <th class="p-3 text-center">PDF Columns</th>
                 <th class="p-3 text-center">Rate / Trans</th>
                 <th class="p-3 text-center text-red-400">Pending</th>
                 <th class="p-3 text-right">Action</th>
@@ -50,6 +50,7 @@
                 </td>
 
                 {% if current_user.is_admin %}
+
                 <td class="p-3 space-y-2">
                     <textarea form="form-{{v.id}}" name="billing_name" placeholder="Billing Name" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs h-8 focus:border-blue-500 outline-none resize-none">{{ v.billing_name or '' }}</textarea>
                     <textarea form="form-{{v.id}}" name="billing_address" placeholder="Address" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs h-8 focus:border-blue-500 outline-none resize-none">{{ v.billing_address or '' }}</textarea>
@@ -90,14 +91,26 @@
                 </td>
 
                 {% else %}
+
                 <td class="p-3 text-xs text-gray-400">
                     <div class="font-bold text-gray-300">{{ v.billing_name or '-' }}</div>
                     <div>{{ v.billing_address or '-' }}</div>
                 </td>
+
+                <td class="p-3 align-middle">
+                    <div class="grid grid-cols-2 gap-1 text-[9px] text-gray-500 w-24 mx-auto bg-black/10 p-2 rounded border border-white/5">
+                        <span class="{{ 'text-green-400 font-bold' if v.show_rr else 'opacity-30' }}">RR</span>
+                        <span class="{{ 'text-green-400 font-bold' if v.show_handling else 'opacity-30' }}">Hndl</span>
+                        <span class="{{ 'text-green-400 font-bold' if v.show_railway else 'opacity-30' }}">Rail</span>
+                        <span class="{{ 'text-green-400 font-bold' if v.show_transport else 'opacity-30' }}">Trns</span>
+                    </div>
+                </td>
+
                 <td class="p-3 text-center">
                     <div class="text-green-400 font-mono text-xs mb-1">@ {{ v.rate_per_parcel }}</div>
                     <div class="text-blue-400 font-mono text-xs">+ {{ v.transport_rate }}</div>
                 </td>
+
                 <td class="p-3 text-center align-middle">
                     <form action="/settings/vendor/update/{{ v.id }}" method="POST" class="flex items-center justify-center gap-2">
                         <div class="relative">
@@ -107,6 +120,7 @@
                         <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-3 py-1.5 rounded transition shadow-lg">UPDATE</button>
                     </form>
                 </td>
+
                 <td class="p-3 text-right align-middle text-xs text-gray-600">View Only</td>
                 {% endif %}
             </tr>
