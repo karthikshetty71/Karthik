@@ -1,0 +1,52 @@
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="md:col-span-1 glass p-6 rounded-2xl h-fit">
+        <h3 class="text-lg font-bold text-white mb-4">Add New User</h3>
+        <form action="/settings/user/add" method="POST" class="space-y-4">
+            <div>
+                <label class="text-xs text-gray-500 uppercase font-bold">Username</label>
+                <input type="text" name="username" required class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white mt-1">
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 uppercase font-bold">Password</label>
+                <input type="password" name="password" required class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white mt-1">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-500 transition">Create Account</button>
+        </form>
+    </div>
+
+    <div class="md:col-span-2 glass p-6 rounded-2xl">
+        <h3 class="text-lg font-bold text-white mb-4">Active Users</h3>
+        <div class="overflow-hidden rounded-lg border border-white/10">
+            <table class="w-full text-left text-sm text-gray-400">
+                <thead class="bg-black/40 text-gray-500 font-bold text-xs uppercase">
+                <tr>
+                    <th class="p-3">User</th>
+                    <th class="p-3">Role</th>
+                    <th class="p-3 text-right">Action</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800 bg-black/10">
+                {% for u in users %}
+                <tr>
+                    <td class="p-3 text-white font-bold">{{ u.username }}</td>
+                    <td class="p-3">
+                        {% if u.is_admin %}
+                        <span class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs font-bold border border-purple-500/30">ADMIN</span>
+                        {% else %}
+                        <span class="bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs">STAFF</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-3 text-right">
+                        {% if u.id != current_user.id %}
+                        <a href="/settings/user/delete/{{ u.id }}" class="text-red-500 hover:text-white text-xs font-bold" onclick="return confirm('Revoke access for {{ u.username }}?')">REVOKE</a>
+                        {% else %}
+                        <span class="text-gray-600 text-xs italic">Current</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
