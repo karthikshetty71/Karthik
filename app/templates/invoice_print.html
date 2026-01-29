@@ -77,25 +77,25 @@
             <td class="py-2 px-2">{{ entry.date.strftime('%d-%m-%Y') }}</td>
 
             {% if vendor_settings.show_rr %}
-            <td class="py-2 px-2 font-mono text-xs">{{ entry.rr_no }}</td>
+            <td class="py-2 px-2 font-mono text-xs">{{ entry.lr_number or '-' }}</td>
             {% endif %}
 
-            <td class="py-2 px-2">{{ entry.ship_to }}</td>
+            <td class="py-2 px-2">{{ entry.part or '-' }}</td>
             <td class="py-2 px-2 text-right">{{ entry.parcels }}</td>
 
             {% if vendor_settings.show_handling %}
-            <td class="py-2 px-2 text-right">{{ "{:,.0f}".format(entry.handling_chg) }}</td>
+            <td class="py-2 px-2 text-right">{{ "{:,.0f}".format(entry.hamali + entry.stat_charges) }}</td>
             {% endif %}
 
             {% if vendor_settings.show_railway %}
-            <td class="py-2 px-2 text-right">{{ "{:,.0f}".format(entry.railway_chg) }}</td>
+            <td class="py-2 px-2 text-right">{{ "{:,.0f}".format(entry.railway_charges + entry.cr_charges) }}</td>
             {% endif %}
 
             {% if vendor_settings.show_transport %}
-            <td class="py-2 px-2 text-right">{{ "{:,.0f}".format(entry.transport_chg) }}</td>
+            <td class="py-2 px-2 text-right">{{ "{:,.0f}".format(entry.transport_charges) }}</td>
             {% endif %}
 
-            <td class="py-2 px-2 text-right font-bold">{{ "{:,.0f}".format(entry.total) }}</td>
+            <td class="py-2 px-2 text-right font-bold">{{ "{:,.0f}".format(entry.grand_total) }}</td>
         </tr>
         {% endfor %}
         </tbody>

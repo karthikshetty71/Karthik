@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 @login_required
 def optimize_db():
     if not current_user.is_admin:
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='system'))
 
     try:
         # VACUUM rebuilds the DB file, reclaiming free space
@@ -24,14 +24,15 @@ def optimize_db():
     except Exception as e:
         flash(f"Error optimizing: {e}")
 
-    return redirect(url_for('admin.settings'))
+    # Redirect back to the System tab
+    return redirect(url_for('admin.settings', tab='system'))
 
 # --- CLEAR OLD LOGS ---
 @admin_bp.route('/settings/clear_logs')
 @login_required
 def clear_logs():
     if not current_user.is_admin:
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='system'))
 
     try:
         # Delete logs older than 7 days
@@ -44,7 +45,8 @@ def clear_logs():
     except Exception as e:
         flash(f"Error clearing logs: {e}")
 
-    return redirect(url_for('admin.settings'))
+    # Redirect back to the System tab (where the button is)
+    return redirect(url_for('admin.settings', tab='system'))
 
 # --- DOWNLOAD BACKUP ---
 @admin_bp.route('/settings/backup')
@@ -55,8 +57,7 @@ def backup():
 
     AuditLog.log(current_user, "SYSTEM", "Downloaded Database Backup")
 
-    # FIX: Point explicitly to the 'instance' folder
-    # This matches the configuration in app/__init__.py
+    # Point explicitly to the 'instance' folder
     db_path = os.path.join(os.getcwd(), 'instance', 'logistics.db')
 
     if os.path.exists(db_path):

@@ -48,6 +48,7 @@
 </div>
 
 <script>
+    // 1. Function to switch tabs
     function showTab(tabName) {
         // Hide all contents
         document.querySelectorAll('.tab-content').forEach(el => {
@@ -75,6 +76,20 @@
             activeBtn.classList.remove('text-gray-400', 'hover:text-white');
             activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
         }
+
+        // Update URL history without reloading page
+        // This makes sure if user refreshes, they stay on the same tab (if logic is supported)
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.set('tab', tabName);
+        window.history.pushState({}, '', newUrl);
     }
+
+    // 2. Run on Page Load: Check URL for ?tab=xyz
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        // Default to 'vendors' if no tab param is found
+        const currentTab = urlParams.get('tab') || 'vendors';
+        showTab(currentTab);
+    });
 </script>
 {% endblock %}

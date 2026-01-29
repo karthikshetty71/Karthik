@@ -4,12 +4,13 @@ from app.models import Vendor, AuditLog
 from app.extensions import db
 from . import admin_bp
 
+# --- ADD NEW VENDOR ---
 @admin_bp.route('/settings/vendor/add', methods=['POST'])
 @login_required
 def add_vendor():
     if not current_user.is_admin:
         flash("Read Only Mode.")
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='vendors'))
 
     name = request.form.get('vendor_name')
     if name:
@@ -25,25 +26,34 @@ def add_vendor():
                 show_rr=True, show_handling=True, show_railway=True, show_transport=True
             ))
             db.session.commit()
+
             AuditLog.log(current_user, "ADD VENDOR", f"Added new vendor: {name}")
             flash(f"Vendor '{name}' added.")
-    return redirect(url_for('admin.settings'))
 
+    return redirect(url_for('admin.settings', tab='vendors'))
+
+# --- UPDATE VENDOR ---
 @admin_bp.route('/settings/vendor/update/<int:id>', methods=['POST'])
 @login_required
 def update_vendor(id):
     vendor = Vendor.query.get_or_404(id)
+
     try:
+        # 1. Update Pending Balance (Allowed for ANY user)
         new_pending = request.form.get('pending_balance')
         if new_pending is not None:
             old_balance = vendor.pending_balance
             vendor.pending_balance = float(new_pending)
+
+            # Log significant balance changes
             if old_balance != vendor.pending_balance:
                 AuditLog.log(current_user, "UPDATE BALANCE", f"{vendor.name}: {old_balance} -> {vendor.pending_balance}")
 
+        # 2. Update Critical Info (Admin Only)
         if current_user.is_admin:
             old_rate = vendor.rate_per_parcel
             new_rate = float(request.form.get('rate'))
+
             vendor.rate_per_parcel = new_rate
             vendor.transport_rate = float(request.form.get('transport'))
             vendor.billing_name = request.form.get('billing_name')
@@ -60,29 +70,40 @@ def update_vendor(id):
 
         db.session.commit()
         flash(f"Updated {vendor.name}")
+
     except Exception as e:
         flash(f"Error: {str(e)}")
-    return redirect(url_for('admin.settings'))
 
+    return redirect(url_for('admin.settings', tab='vendors'))
+
+# --- DELETE VENDOR ---
 @admin_bp.route('/settings/vendor/delete/<int:id>')
 @login_required
 def delete_vendor(id):
-    if not current_user.is_admin: return redirect(url_for('admin.settings'))
+    if not current_user.is_admin:
+        return redirect(url_for('admin.settings', tab='vendors'))
+
     v = Vendor.query.get_or_404(id)
-    name = v.name
+    name = v.name # Capture name before delete
     db.session.delete(v)
     db.session.commit()
+
     AuditLog.log(current_user, "DELETE VENDOR", f"Deleted vendor: {name}")
     flash(f"Deleted vendor: {name}")
-    return redirect(url_for('admin.settings'))
 
+    return redirect(url_for('admin.settings', tab='vendors'))
+
+# --- SET DEFAULT VENDOR ---
 @admin_bp.route('/settings/vendor/default/<int:id>')
 @login_required
 def set_default_vendor(id):
-    if not current_user.is_admin: return redirect(url_for('admin.settings'))
+    if not current_user.is_admin:
+        return redirect(url_for('admin.settings', tab='vendors'))
+
     Vendor.query.update({Vendor.is_default: False})
     v = Vendor.query.get_or_404(id)
     v.is_default = True
     db.session.commit()
+
     AuditLog.log(current_user, "UPDATE VENDOR", f"Set {v.name} as default")
-    return redirect(url_for('admin.settings'))
+    return redirect(url_for('admin.settings', tab='vendors'))

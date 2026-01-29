@@ -9,7 +9,7 @@ from . import admin_bp
 @login_required
 def add_user():
     if not current_user.is_admin:
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='users'))
 
     username = request.form.get('username')
     password = request.form.get('password')
@@ -30,18 +30,18 @@ def add_user():
             AuditLog.log(current_user, "ADD USER", f"Created user: {username} ({role})")
             flash(f'User {username} added as {role}')
 
-    return redirect(url_for('admin.settings'))
+    return redirect(url_for('admin.settings', tab='users'))
 
 # --- TOGGLE ADMIN ROLE ---
 @admin_bp.route('/settings/user/toggle_admin/<int:id>')
 @login_required
 def toggle_admin(id):
     if not current_user.is_admin:
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='users'))
 
     if current_user.id == id:
         flash("You cannot demote yourself!")
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='users'))
 
     user = User.query.get_or_404(id)
 
@@ -53,18 +53,18 @@ def toggle_admin(id):
     AuditLog.log(current_user, "UPDATE USER", f"Changed {user.username} role to {new_role}")
     flash(f"{user.username} is now {new_role}")
 
-    return redirect(url_for('admin.settings'))
+    return redirect(url_for('admin.settings', tab='users'))
 
 # --- TOGGLE ACTIVE STATUS (ENABLE/DISABLE) ---
 @admin_bp.route('/settings/user/toggle_active/<int:id>')
 @login_required
 def toggle_active(id):
     if not current_user.is_admin:
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='users'))
 
     if current_user.id == id:
         flash("You cannot disable yourself!")
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='users'))
 
     user = User.query.get_or_404(id)
 
@@ -78,18 +78,18 @@ def toggle_active(id):
     AuditLog.log(current_user, "UPDATE USER", f"{status} user access for {user.username}")
     flash(f"User {user.username} is now {status}")
 
-    return redirect(url_for('admin.settings'))
+    return redirect(url_for('admin.settings', tab='users'))
 
 # --- DELETE USER ---
 @admin_bp.route('/settings/user/delete/<int:id>')
 @login_required
 def delete_user(id):
     if not current_user.is_admin:
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='users'))
 
     if current_user.id == id:
         flash("Cannot delete yourself!")
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.settings', tab='users'))
 
     user = User.query.get_or_404(id)
     username = user.username
@@ -99,4 +99,4 @@ def delete_user(id):
     AuditLog.log(current_user, "DELETE USER", f"Deleted user: {username}")
     flash(f'Deleted user {username}')
 
-    return redirect(url_for('admin.settings'))
+    return redirect(url_for('admin.settings', tab='users'))

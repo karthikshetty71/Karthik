@@ -5,24 +5,28 @@
     <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-8 gap-6">
         <div class="text-center md:text-left">
             <h2 class="text-3xl font-bold mb-1 neon-text">Records</h2>
-            <p class="text-gray-400 text-sm">Showing data for: <span class="text-white font-bold">{{ vendor }}</span></p>
+            <p class="text-gray-400 text-sm">Managing entries for selected period.</p>
         </div>
 
         <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto items-stretch md:items-center">
 
             {% if current_user.is_admin %}
             <a href="/admin_view" class="bg-purple-600/20 text-purple-300 border border-purple-500/30 px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-purple-600/40 transition text-center">
-                Switch to Admin Master View
+                Admin View
             </a>
             {% endif %}
 
             <form class="flex gap-2 bg-black/40 p-1 rounded-lg border border-gray-600 items-center justify-between w-full md:w-auto">
-                <input type="month" name="month" value="{{ month }}" onchange="this.form.submit()" class="bg-transparent text-white px-2 outline-none text-xs [color-scheme:dark] flex-1 md:flex-none">
+                <input type="month" name="month" value="{{ month }}" onchange="this.form.submit()"
+                       class="bg-transparent text-white px-2 outline-none text-xs [color-scheme:dark] flex-1 md:flex-none">
+
                 <div class="w-px bg-gray-600 h-4 mx-1"></div>
+
                 <div class="relative flex-1 md:flex-none">
                     <select name="vendor" onchange="this.form.submit()" class="w-full bg-transparent text-white pl-2 pr-6 outline-none text-xs appearance-none cursor-pointer">
+                        <option value="All" {% if vendor == 'All' or not vendor %}selected{% endif %}>All Vendors</option>
                         {% for v in vendors %}
-                        <option value="{{ v.name }}" {% if vendor == v.name %}selected{% endif %}>{{ v.name }}</option>
+                        <option value="{{ v.id }}" {% if vendor|int == v.id %}selected{% endif %}>{{ v.name }}</option>
                         {% endfor %}
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center text-gray-400">
@@ -30,10 +34,6 @@
                     </div>
                 </div>
             </form>
-
-            <a href="/export_csv?month={{ month }}&vendor={{ vendor }}" class="flex items-center justify-center gap-2 bg-green-600/20 hover:bg-green-600/40 text-green-300 border border-green-500/30 px-3 py-2 rounded-lg text-xs font-bold uppercase transition w-full md:w-auto">
-                Download CSV
-            </a>
         </div>
     </div>
 
@@ -42,38 +42,71 @@
             <thead class="text-xs uppercase bg-black/40 text-gray-300 font-bold tracking-wider">
             <tr>
                 <th class="px-4 py-4 whitespace-nowrap">Date</th>
-                <th class="px-4 py-4 text-blue-400 whitespace-nowrap">RR No</th>
-                <th class="px-4 py-4 text-right whitespace-nowrap">Parcels</th>
-                <th class="px-4 py-4 text-right whitespace-nowrap">Hndl</th>
-                <th class="px-4 py-4 text-right whitespace-nowrap">Rail</th>
-                <th class="px-4 py-4 text-right whitespace-nowrap">Trans</th>
-                <th class="px-4 py-4 text-right text-white whitespace-nowrap">Total</th>
+                <th class="px-4 py-4 whitespace-nowrap">Reference</th> <th class="px-4 py-4 whitespace-nowrap">Vendor</th>
+                <th class="px-4 py-4 text-center whitespace-nowrap">Parcels</th>
+                <th class="px-4 py-4 text-right whitespace-nowrap text-green-400">Freight</th>
+                <th class="px-4 py-4 text-right whitespace-nowrap text-blue-400">Trans</th>
+                <th class="px-4 py-4 text-right whitespace-nowrap text-purple-400">Misc</th> <th class="px-4 py-4 text-right text-white whitespace-nowrap">Total</th>
                 <th class="px-4 py-4 text-center whitespace-nowrap">Action</th>
             </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
             {% for entry in entries %}
-            <tr class="hover:bg-white/5 transition group">
-                <td class="px-4 py-3 text-white whitespace-nowrap">{{ entry.date.strftime('%d %b') }}</td>
-                <td class="px-4 py-3 font-mono text-xs text-blue-400">{{ entry.rr_no }}</td>
+            <tr class="hover:bg-white/5 transition group align-top">
 
-                <td class="px-4 py-3 text-right">{{ entry.parcels }}</td>
-                <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(entry.handling_chg) }}</td>
-                <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(entry.railway_chg) }}</td>
-                <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(entry.transport_chg) }}</td>
+                <td class="px-4 py-3 text-white whitespace-nowrap font-mono text-xs">
+                    {{ entry.date.strftime('%d %b') }}
+                </td>
 
-                <td class="px-4 py-3 text-right text-white font-bold tracking-wide">₹{{ "{:,.0f}".format(entry.total) }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <div class="flex flex-col gap-0.5">
+                        {% if entry.invoice_number %}
+                        <span class="text-white text-xs font-bold">{{ entry.invoice_number }}</span>
+                        {% endif %}
+                        <div class="flex gap-2 text-[10px]">
+                            {% if entry.lr_number %}
+                            <span class="text-blue-400 bg-blue-400/10 px-1 rounded">LR: {{ entry.lr_number }}</span>
+                            {% endif %}
+                            {% if entry.part %}
+                            <span class="text-yellow-400 bg-yellow-400/10 px-1 rounded">PT: {{ entry.part }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+
+                <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-300">
+                    {{ entry.vendor.name }}
+                </td>
+
+                <td class="px-4 py-3 text-center text-white font-bold">{{ entry.parcels }}</td>
+
+                <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(entry.total_freight) }}</td>
+
+                <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(entry.transport_charges) }}</td>
+
+                <td class="px-4 py-3 text-right text-gray-500">
+                    {% set misc = (entry.grand_total - entry.total_freight - entry.transport_charges) %}
+                    {{ "{:,.0f}".format(misc) }}
+                </td>
+
+                <td class="px-4 py-3 text-right text-white font-bold tracking-wide text-sm">
+                    ₹{{ "{:,.0f}".format(entry.grand_total) }}
+                </td>
 
                 <td class="px-4 py-3 text-center">
                     <div class="flex justify-center gap-2">
-                        <a href="/edit/{{ entry.id }}" class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:bg-blue-600 hover:text-white transition">
+                        <a href="/edit/{{ entry.id }}" class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2 py-1 rounded text-[10px] font-bold uppercase hover:bg-blue-600 hover:text-white transition">
                             Edit
                         </a>
-                        <a href="/delete/{{ entry.id }}" onclick="return confirm('Delete?')" class="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:bg-red-600 hover:text-white transition">
-                            Delete
+                        <a href="/entry/delete/{{ entry.id }}" onclick="return confirm('Delete this entry?')" class="bg-red-600/20 text-red-400 border border-red-500/30 px-2 py-1 rounded text-[10px] font-bold uppercase hover:bg-red-600 hover:text-white transition">
+                            Del
                         </a>
                     </div>
                 </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="p-8 text-center text-gray-500 italic">No records found for this period.</td>
             </tr>
             {% endfor %}
             </tbody>
