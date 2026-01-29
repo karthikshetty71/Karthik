@@ -29,18 +29,14 @@ def home():
 
     if request.method == 'POST':
         try:
-            # 1. Get Vendor (By Name, as per your old form)
+            # 1. Get Vendor (By Name, from the select dropdown)
             vendor_name = request.form.get('vendor')
-
-            # Find the ID for the relationship
             vendor_obj = Vendor.query.filter_by(name=vendor_name).first()
             if not vendor_obj:
                 raise ValueError("Vendor not found")
 
             # 2. Get Inputs
             parcels = safe_int(request.form.get('parcels'))
-
-            # Charges
             handling = safe_float(request.form.get('handling'))
             railway = safe_float(request.form.get('railway'))
             transport = safe_float(request.form.get('transport'))
@@ -66,7 +62,6 @@ def home():
             db.session.commit()
 
             AuditLog.log(current_user, "ADD ENTRY", f"Added {parcels} parcels for {vendor_name}")
-
             flash('Entry Added Successfully!')
             return redirect(url_for('core.home'))
 
@@ -92,6 +87,16 @@ def view_data():
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
     vendor_id = request.args.get('vendor')
 
+    # --- LOGIC: Handle Default Vendor ---
+    # If no vendor is explicitly selected in the URL, try to find the default one.
+    if not vendor_id:
+        default_vendor = Vendor.query.filter_by(is_default=True).first()
+        if default_vendor:
+            vendor_id = str(default_vendor.id)
+        else:
+            vendor_id = 'All'
+
+    # Build Query
     query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
 
     if vendor_id and vendor_id != 'All':
@@ -100,7 +105,11 @@ def view_data():
     entries = query.order_by(Entry.date.desc()).all()
     vendors = Vendor.query.all()
 
-    return render_template('view_data.html', entries=entries, month=month, vendor=vendor_id, vendors=vendors)
+    return render_template('view_data.html',
+                           entries=entries,
+                           month=month,
+                           vendor=vendor_id,
+                           vendors=vendors)
 
 # --- 3. DELETE ENTRY ---
 @core_bp.route('/entry/delete/<int:id>')
@@ -119,4 +128,10 @@ def delete_entry(id):
 @core_bp.route('/admin_view')
 @login_required
 def admin_view():
-    return redirect(url_for('core.view_data'))
+    if not current_user.is_admin:
+        flash("Admins only.")
+        return redirect(url_for('core.home'))
+
+    # Redirect to view_data but force 'All' vendors selected
+    today = datetime.today().strftime('%Y-%m')
+    return redirect(url_for('core.view_data', month=today, vendor='All'))
