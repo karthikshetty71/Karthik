@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-3xl mx-auto mt-6">
+    
+    <div class="bg-[#1e1e1e] rounded-t-lg shadow-2xl mb-0 overflow-hidden font-mono text-xs border border-gray-800">
+        <div class="bg-[#2d2d2d] px-4 py-2 flex gap-2 border-b border-gray-700">
+            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            <div class="ml-auto text-gray-500 font-sans">kps-system — bash — 120x24</div>
+        </div>
+        <div class="p-4 h-24 overflow-y-auto text-green-400 leading-relaxed" id="terminal-body">
+            <span id="typewriter"></span><span class="animate-pulse">_</span>
+        </div>
+    </div>
+
+    <div class="glass p-8 rounded-b-2xl border-t-0 relative z-10">
+        
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 pb-6 border-b border-gray-700">
+            <div>
+                <h2 class="text-2xl font-bold mb-1 text-white">Quick Entry</h2>
+                <p class="text-gray-400 text-sm">System ready. Dynamic Rate Cards enabled.</p>
+            </div>
+            
+            <div class="flex gap-4 mt-4 md:mt-0">
+                <div class="bg-blue-900/40 border border-blue-500/30 px-4 py-2 rounded text-right">
+                    <p class="text-xs text-blue-300 uppercase">Today's Revenue</p>
+                    <p class="text-xl font-bold text-white">₹ {{ "{:,.0f}".format(today_rev) }}</p>
+                </div>
+                <div class="bg-green-900/40 border border-green-500/30 px-4 py-2 rounded text-right">
+                    <p class="text-xs text-green-300 uppercase">Parcels Today</p>
+                    <p class="text-xl font-bold text-white">{{ today_parcels }}</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" class="space-y-6">
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs uppercase text-gray-500 mb-1">Date</label>
+                    <input type="date" name="date" value="{{ today }}" required class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 [color-scheme:dark]">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase text-gray-500 mb-1">Vendor</label>
+                    <select name="vendor" id="vendorSelect" onchange="calculateCharges()" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500">
+                        {% for v in vendors %}
+                        <option value="{{ v.name }}" data-rate="{{ v.rate_per_parcel }}">{{ v.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-6">
+                <div>
+                     <label class="block text-xs uppercase text-gray-500 mb-1">RR No.</label>
+                     <input type="text" name="rr_no" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none" placeholder="12345">
+                </div>
+                <div>
+                     <label class="block text-xs uppercase text-gray-500 mb-1">From</label>
+                     <input type="text" name="from" value="Udupi" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                     <label class="block text-xs uppercase text-gray-500 mb-1">To</label>
+                     <input type="text" name="to" value="Mumbai" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs uppercase text-gray-500 mb-1">No. of Parcels</label>
+                <input type="number" name="parcels" id="parcelsInput" oninput="calculateCharges()" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-lg font-bold text-white placeholder-gray-600 focus:border-blue-500 outline-none" placeholder="0">
+            </div>
+
+            <div class="pt-6 border-t border-gray-700 space-y-3">
+                <p class="text-xs uppercase tracking-wider text-gray-400">Charges Breakdown (Auto-Calculated)</p>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="relative group">
+                        <input type="number" step="0.01" name="handling" id="handlingInput" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-right text-white focus:border-blue-500 outline-none font-mono" placeholder="0">
+                        <span class="absolute left-3 top-3 text-[10px] text-gray-500 group-hover:text-blue-400 font-bold">HNDL</span>
+                    </div>
+                    <div class="relative group">
+                        <input type="number" step="0.01" name="railway" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-right text-white focus:border-blue-500 outline-none font-mono" placeholder="0">
+                        <span class="absolute left-3 top-3 text-[10px] text-gray-500 group-hover:text-blue-400 font-bold">RAIL</span>
+                    </div>
+                    <div class="relative group">
+                        <input type="number" step="0.01" name="transport" id="transportInput" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-right text-white focus:border-blue-500 outline-none font-mono" placeholder="0">
+                        <span class="absolute left-3 top-3 text-[10px] text-gray-500 group-hover:text-blue-400 font-bold">TRNS</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-white text-black font-bold py-4 rounded mt-2 hover:bg-gray-200 transition transform hover:scale-[1.01] tracking-widest text-sm">
+                SAVE ENTRY >
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const textLines = ["kps.admin ~/logistics", "$ init system...", "> Loading Rate Cards... [OK]", "> Auto-Calculation Engine... [ONLINE]", "> User: {{ current_user.username }}", "$ ready_"];
+    const element = document.getElementById('typewriter');
+    let lineIndex = 0, charIndex = 0;
+    
+    function typeWriter() {
+        if (lineIndex < textLines.length) {
+            if (charIndex < textLines[lineIndex].length) { element.innerHTML += textLines[lineIndex].charAt(charIndex++); setTimeout(typeWriter, 30); }
+            else { element.innerHTML += "<br/>"; lineIndex++; charIndex = 0; setTimeout(typeWriter, 300); }
+        }
+    }
+    window.onload = typeWriter;
+
+    function calculateCharges() {
+        // 1. Get Parcels
+        const parcels = parseFloat(document.getElementById('parcelsInput').value) || 0;
+        
+        // 2. Get Dynamic Rate
+        const vendorSelect = document.getElementById('vendorSelect');
+        const selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
+        // Read data-rate attribute, default to 70 if missing
+        const ratePerParcel = parseFloat(selectedOption.getAttribute('data-rate')) || 70;
+
+        // 3. Calc Handling
+        const handling = parcels * ratePerParcel;
+        
+        // 4. Calc Transport
+        let transport = 0;
+        if(parcels > 0) { transport = (parcels <= 5) ? 500 : 700; }
+
+        document.getElementById('handlingInput').value = handling;
+        document.getElementById('transportInput').value = transport;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="pt-24 px-4 md:px-12 max-w-7xl mx-auto pb-12">
+    
+    <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold">Dashboard</h1>
+            <p class="text-gray-400">Manage daily entries</p>
+        </div>
+        
+        <form method="GET" action="/dashboard" class="flex gap-2 bg-kps-gray p-2 rounded-lg border border-gray-800">
+            <input type="month" name="month" value="{{ month }}" onchange="this.form.submit()" class="bg-transparent text-white outline-none px-2 [color-scheme:dark]">
+            <div class="w-px bg-gray-700 mx-2"></div>
+            <select name="vendor" onchange="this.form.submit()" class="bg-transparent text-white outline-none px-2">
+                <option value="All" {% if vendor == 'All' %}selected{% endif %}>All Vendors</option>
+                <option value="M/S Best Sellers" {% if vendor == 'M/S Best Sellers' %}selected{% endif %}>M/S Best Sellers</option>
+                <option value="M/S Shiva Express" {% if vendor == 'M/S Shiva Express' %}selected{% endif %}>M/S Shiva Express</option>
+                <option value="Manipal Technologies" {% if vendor == 'Manipal Technologies' %}selected{% endif %}>Manipal Technologies</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="glass p-6 rounded-2xl h-fit">
+            <h3 class="text-xl font-bold mb-6 text-white">New Entry</h3>
+            <form method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase text-gray-500 mb-1">Date</label>
+                    <input type="date" name="date" required class="w-full bg-black/50 border border-gray-700 rounded p-2 text-white outline-none focus:border-white [color-scheme:dark]">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase text-gray-500 mb-1">Vendor</label>
+                    <select name="vendor" class="w-full bg-black/50 border border-gray-700 rounded p-2 text-white outline-none">
+                        <option>M/S Best Sellers</option>
+                        <option>M/S Shiva Express</option>
+                        <option>Manipal Technologies</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" name="from" value="Udupi" placeholder="From" class="bg-black/50 border border-gray-700 rounded p-2 text-white">
+                    <input type="text" name="to" value="Mumbai" placeholder="To" class="bg-black/50 border border-gray-700 rounded p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase text-gray-500 mb-1">Parcels</label>
+                    <input type="number" name="parcels" placeholder="0" class="w-full bg-black/50 border border-gray-700 rounded p-2 text-white">
+                </div>
+                <div class="pt-2 border-t border-gray-800 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm text-gray-400">Handling</label>
+                        <input type="number" step="0.01" name="handling" placeholder="0" class="w-24 bg-black/50 border border-gray-700 rounded p-1 text-right text-white">
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm text-gray-400">Railway</label>
+                        <input type="number" step="0.01" name="railway" placeholder="0" class="w-24 bg-black/50 border border-gray-700 rounded p-1 text-right text-white">
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm text-gray-400">Transport</label>
+                        <input type="number" step="0.01" name="transport" placeholder="0" class="w-24 bg-black/50 border border-gray-700 rounded p-1 text-right text-white">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-white text-black font-bold py-3 rounded mt-4 hover:bg-gray-200">ADD ENTRY</button>
+            </form>
+        </div>
+
+        <div class="lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+                <div class="text-xl font-bold">Total: ₹ {{ "{:,.2f}".format(grand_total) }}</div>
+                <a href="{{ url_for('invoice', month=month, vendor=vendor) }}" target="_blank" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold text-white">
+                    PRINT BILL
+                </a>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-gray-800">
+                <table class="w-full text-sm text-left text-gray-400">
+                    <thead class="text-xs uppercase bg-kps-gray text-white">
+                        <tr>
+                            <th class="px-4 py-3">Date</th>
+                            <th class="px-4 py-3">Vendor</th>
+                            <th class="px-4 py-3 text-right">Parcels</th>
+                            <th class="px-4 py-3 text-right">Total</th>
+                            <th class="px-4 py-3 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                        <tr class="border-b border-gray-800 hover:bg-white/5">
+                            <td class="px-4 py-3">{{ entry.date }}</td>
+                            <td class="px-4 py-3 text-white">{{ entry.vendor }}</td>
+                            <td class="px-4 py-3 text-right">{{ entry.parcels }}</td>
+                            <td class="px-4 py-3 text-right text-white font-bold">₹{{ entry.total }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <a href="/delete/{{ entry.id }}" class="text-red-500 hover:text-red-400" onclick="return confirm('Delete?')">X</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="p-4 text-center">No entries found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

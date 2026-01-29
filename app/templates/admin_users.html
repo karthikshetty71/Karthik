@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10">
+    <div class="flex justify-between items-end mb-6">
+        <div>
+            <h2 class="text-3xl font-bold">User Management</h2>
+            <p class="text-gray-400">Control access to the application</p>
+        </div>
+    </div>
+
+    <div class="glass p-6 rounded-2xl mb-8">
+        <h3 class="text-sm uppercase tracking-widest font-bold mb-4 text-gray-300">Create New User</h3>
+        <form method="POST" class="flex gap-4 items-end">
+            <div class="flex-1">
+                <input type="text" name="username" placeholder="Username" required class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
+            </div>
+            <div class="flex-1">
+                <input type="password" name="password" placeholder="Password" required class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
+            </div>
+            <div class="flex items-center h-12 px-4 bg-black/40 rounded border border-gray-700">
+                <input type="checkbox" name="is_admin" id="is_admin" class="mr-2">
+                <label for="is_admin" class="text-sm cursor-pointer select-none">Is Admin?</label>
+            </div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3 rounded">ADD USER</button>
+        </form>
+    </div>
+
+    <div class="glass rounded-2xl overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-white/10 text-xs uppercase">
+                <tr>
+                    <th class="p-4">ID</th>
+                    <th class="p-4">Username</th>
+                    <th class="p-4">Role</th>
+                    <th class="p-4 text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+                {% for user in users %}
+                <tr class="hover:bg-white/5">
+                    <td class="p-4 text-gray-500">#{{ user.id }}</td>
+                    <td class="p-4 font-bold">{{ user.username }}</td>
+                    <td class="p-4">
+                        {% if user.is_admin %}
+                        <span class="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded border border-yellow-500/50">ADMIN</span>
+                        {% else %}
+                        <span class="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">STAFF</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-4 text-right">
+                        {% if current_user.id != user.id %}
+                        <a href="/admin/delete_user/{{ user.id }}" class="text-red-500 hover:text-red-400 font-bold text-xs border border-red-500/30 px-3 py-1 rounded hover:bg-red-500/10" onclick="return confirm('Delete this user?')">DELETE</a>
+                        {% else %}
+                        <span class="text-gray-600 text-xs italic">Current User</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

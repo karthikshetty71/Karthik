@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice - {{ vendor }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body { background: #555; font-family: 'Inter', sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .sheet { background: white; width: 210mm; min-height: 297mm; padding: 15mm; box-shadow: 0 0 10px rgba(0,0,0,0.5); color: black; position: relative; }
+        @media print { body { background: white; padding: 0; display: block; } .sheet { box-shadow: none; width: 100%; height: auto; margin: 0; padding: 10mm; } .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+    <div class="sheet">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold uppercase tracking-wider border-b-4 border-black inline-block pb-1 mb-2">Karthik Parcel Service</h1>
+            <p class="text-sm font-semibold uppercase tracking-widest">(Authorized Parcel Agent of Konkan Railway, Udupi)</p>
+            <p class="text-sm mt-1">Proprietor: Mr. Rajendra Shetty</p>
+            <p class="text-xs text-gray-500 mt-1">Mobile: 9448026985 | Email: kpsudupi@gmail.com</p>
+        </div>
+
+        <div class="flex justify-between mb-8 border-y-2 border-black py-4">
+            <div class="w-1/2">
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Bill To</p>
+                <p class="font-bold text-xl">{{ vendor if vendor != 'All' else 'Consolidated Report' }}</p>
+                <p class="text-sm">Manipal / Udupi</p>
+            </div>
+            <div class="w-1/2 text-right">
+                <div class="mb-4">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Invoice No</p>
+                    <p class="font-bold text-2xl text-red-600">{{ invoice_no }}</p> </div>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Month</p>
+                    <p class="font-bold text-lg">{{ month }}</p>
+                </div>
+            </div>
+        </div>
+
+        <table class="w-full text-sm mb-8 border-collapse">
+            <thead>
+                <tr class="bg-gray-100 border-b-2 border-black">
+                    <th class="py-3 px-2 text-left font-bold uppercase">Date</th>
+                    <th class="py-3 px-2 text-left font-bold uppercase">RR No</th>
+                    <th class="py-3 px-2 text-left font-bold uppercase">Dest.</th>
+                    <th class="py-3 px-2 text-right font-bold uppercase">Parcels</th>
+                    <th class="py-3 px-2 text-right font-bold uppercase">Handling</th>
+                    <th class="py-3 px-2 text-right font-bold uppercase">Railway</th>
+                    <th class="py-3 px-2 text-right font-bold uppercase">Transport</th>
+                    <th class="py-3 px-2 text-right font-bold uppercase">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr class="border-b border-gray-300">
+                    <td class="py-2 px-2">{{ entry.date.strftime('%d-%m-%Y') }}</td>
+                    <td class="py-2 px-2 font-mono text-xs">{{ entry.rr_no }}</td>
+                    <td class="py-2 px-2">{{ entry.ship_to }}</td>
+                    <td class="py-2 px-2 text-right">{{ entry.parcels }}</td>
+                    <td class="py-2 px-2 text-right">{{ "{:,.0f}".format(entry.handling_chg) }}</td>
+                    <td class="py-2 px-2 text-right">{{ "{:,.0f}".format(entry.railway_chg) }}</td>
+                    <td class="py-2 px-2 text-right">{{ "{:,.0f}".format(entry.transport_chg) }}</td>
+                    <td class="py-2 px-2 text-right font-bold">{{ "{:,.0f}".format(entry.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="bg-gray-800 text-white print:bg-gray-200 print:text-black">
+                    <td colspan="3" class="py-3 px-2 font-bold text-right uppercase">Totals</td>
+                    <td class="py-3 px-2 font-bold text-right">{{ total_parcels }}</td>
+                    <td colspan="3"></td>
+                    <td class="py-3 px-2 font-bold text-right text-lg">₹ {{ "{:,.0f}".format(grand_total) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="mb-12 border-l-4 border-gray-400 pl-4 py-2">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Amount in Words</p>
+            <p class="text-lg font-bold italic capitalize">"{{ total_words }}"</p>
+        </div>
+
+        <div class="mt-auto flex justify-between items-end pb-8">
+            <div class="text-sm">
+                <p class="font-bold border-b border-black mb-1 inline-block">Bank Details</p>
+                <p>Canara Bank (Udupi Branch)</p>
+                <p>IFSC: CNRB0000639</p>
+                <p>Acc No: 01613070000392</p>
+            </div>
+            <div class="text-center">
+                <div class="h-16 w-40 mb-2 border-b border-black"></div>
+                <p class="text-sm font-bold uppercase">For Karthik Parcel Service</p>
+                <p class="text-xs text-gray-500">(Authorized Signature)</p>
+            </div>
+        </div>
+        
+        <div class="fixed bottom-8 right-8 no-print flex gap-4">
+             <button onclick="window.close()" class="bg-gray-600 shadow-xl text-white px-6 py-4 rounded-full font-bold hover:bg-gray-700 transition">
+                CLOSE
+            </button>
+            <button onclick="window.print()" class="bg-blue-600 shadow-xl text-white px-8 py-4 rounded-full font-bold hover:bg-blue-700 flex items-center gap-2 animate-bounce transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                PRINT NOW
+            </button>
+        </div>
+    </div>
+</body>
+</html>
