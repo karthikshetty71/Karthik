@@ -40,38 +40,46 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="w-full">
                     <label class="block text-xs uppercase text-gray-500 mb-1">Date</label>
-                    <input type="date" name="date" value="{{ today }}" required class="w-full min-w-0 bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 [color-scheme:dark]">
+                    <input type="date" name="date" value="{{ today }}" required
+                           class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 [color-scheme:dark] appearance-none">
                 </div>
                 <div class="w-full">
                     <label class="block text-xs uppercase text-gray-500 mb-1">Vendor</label>
-                    <select name="vendor" id="vendorSelect" onchange="calculateCharges()" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 truncate">
-                        {% for v in vendors %}
-                        <option value="{{ v.name }}" data-rate="{{ v.rate_per_parcel }}">{{ v.name }}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="relative">
+                        <select name="vendor" id="vendorSelect" onchange="calculateCharges()"
+                                class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 appearance-none truncate pr-8">
+                            {% for v in vendors %}
+                            <option value="{{ v.name }}" data-rate="{{ v.rate_per_parcel }}">{{ v.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs uppercase text-gray-500 mb-1">RR No.</label>
-                    <input type="text" name="rr_no" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none" placeholder="12345">
+                    <input type="text" name="rr_no" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none" placeholder="12345">
                 </div>
                 <div class="grid grid-cols-2 gap-3 md:col-span-2">
                     <div>
                         <label class="block text-xs uppercase text-gray-500 mb-1">From</label>
-                        <input type="text" name="from" value="Udupi" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
+                        <input type="text" name="from" value="Udupi" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
                     </div>
                     <div>
                         <label class="block text-xs uppercase text-gray-500 mb-1">To</label>
-                        <input type="text" name="to" value="Mumbai" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
+                        <input type="text" name="to" value="Mumbai" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
                     </div>
                 </div>
             </div>
 
             <div>
                 <label class="block text-xs uppercase text-gray-500 mb-1">No. of Parcels</label>
-                <input type="number" name="parcels" id="parcelsInput" oninput="calculateCharges()" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-lg font-bold text-white placeholder-gray-600 focus:border-blue-500 outline-none" placeholder="0">
+                <input type="number" name="parcels" id="parcelsInput" oninput="calculateCharges()"
+                       class="w-full h-14 bg-black/40 border border-gray-700 rounded p-3 text-lg font-bold text-white placeholder-gray-600 focus:border-blue-500 outline-none" placeholder="0">
             </div>
 
             <div class="pt-6 border-t border-gray-700 space-y-3">
