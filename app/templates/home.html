@@ -1,252 +1,135 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="max-w-4xl mx-auto mt-6 px-4 pb-12">
 
-<div class="max-w-4xl mx-auto mt-2 md:mt-6 w-full px-3 md:px-0 overflow-x-hidden pb-12">
-
-    <div class="hidden md:block bg-[#1e1e1e] rounded-t-lg shadow-2xl mb-0 overflow-hidden font-mono text-xs border border-gray-800">
-        <div class="bg-[#2d2d2d] px-4 py-2 flex gap-2 border-b border-gray-700">
-            <div class="w-3 h-3 rounded-full bg-red-500"></div>
-            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <div class="w-3 h-3 rounded-full bg-green-500"></div>
-            <div class="ml-auto text-gray-500 font-sans">kps-system — bash — 120x24</div>
+    <div class="glass p-6 rounded-2xl border border-white/10 mb-6 flex justify-between items-end">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Quick Entry</h2>
+            <p class="text-gray-400 text-xs">Standard Logistics Format</p>
         </div>
-        <div class="p-4 h-24 overflow-y-auto text-green-400 leading-relaxed" id="terminal-body">
-            <span id="typewriter"></span><span class="animate-pulse">_</span>
+        <div class="text-right">
+            <p class="text-xs text-blue-400 uppercase font-bold">Today's Revenue</p>
+            <p class="text-2xl font-bold text-white">₹ {{ "{:,.0f}".format(today_rev) }}</p>
         </div>
     </div>
 
-    <div class="glass p-5 md:p-8 rounded-xl md:rounded-b-2xl border-t border-white/10 relative z-10">
-
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 pb-4 border-b border-gray-700 gap-4">
-            <div>
-                <h2 class="text-2xl font-bold mb-1 text-white">Quick Entry</h2>
-                <p class="text-gray-400 text-xs md:text-sm">System ready. New Pricing Engine active.</p>
-            </div>
-
-            <div class="flex gap-2 w-full md:w-auto">
-                <div class="flex-1 bg-blue-900/40 border border-blue-500/30 px-3 py-2 rounded text-center md:text-right min-w-[100px]">
-                    <p class="text-[9px] md:text-xs text-blue-300 uppercase tracking-tighter">Today's Rev</p>
-                    <p class="text-lg md:text-xl font-bold text-white whitespace-nowrap">₹ {{ "{:,.0f}".format(today_rev) }}</p>
-                </div>
-                <div class="flex-1 bg-green-900/40 border border-green-500/30 px-3 py-2 rounded text-center md:text-right min-w-[80px]">
-                    <p class="text-[9px] md:text-xs text-green-300 uppercase tracking-tighter">Parcels</p>
-                    <p class="text-lg md:text-xl font-bold text-white">{{ today_parcels }}</p>
-                </div>
-            </div>
-        </div>
-
+    <div class="glass p-6 rounded-2xl border border-white/10">
         <form method="POST" class="space-y-6">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs uppercase text-gray-500 mb-1 font-bold">Date</label>
-                    <input type="date" name="date" value="{{ date }}" required
-                           class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 [color-scheme:dark]">
+                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Date</label>
+                    <input type="date" name="date" value="{{ date }}" required class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white [color-scheme:dark]">
                 </div>
                 <div>
-                    <label class="block text-xs uppercase text-gray-500 mb-1 font-bold">Vendor</label>
-                    <div class="relative">
-                        <select name="vendor" id="vendorSelect" onchange="updateRates()"
-                                class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 appearance-none truncate pr-8 cursor-pointer">
-                            <option value="" disabled selected>-- Select Vendor --</option>
-                            {% for v in vendors %}
-                            <option value="{{ v.id }}"
-                                    data-rate="{{ v.rate_per_parcel }}"
-                                    data-transport="{{ v.transport_rate }}"
-                                    {% if default_vendor and v.id == default_vendor.id %}selected{% endif %}>
-                                {{ v.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
+                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Vendor</label>
+                    <select name="vendor" id="vendorSelect" onchange="calc()" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
+                        <option value="" disabled selected>-- Select Vendor --</option>
+                        {% for v in vendors %}
+                        <option value="{{ v.id }}" data-rate="{{ v.rate_per_parcel }}" data-trans="{{ v.transport_rate }}">{{ v.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
-
-            <div class="grid grid-cols-3 gap-3">
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 mb-1">Invoice No</label>
-                    <input type="text" name="invoice" class="w-full h-10 bg-black/40 border border-gray-700 rounded p-2 text-white text-sm focus:border-blue-500 outline-none" placeholder="Optional">
-                </div>
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 mb-1">LR No</label>
-                    <input type="text" name="lr" class="w-full h-10 bg-black/40 border border-gray-700 rounded p-2 text-white text-sm focus:border-blue-500 outline-none" placeholder="Optional">
-                </div>
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 mb-1">Part</label>
-                    <input type="text" name="part" class="w-full h-10 bg-black/40 border border-gray-700 rounded p-2 text-white text-sm focus:border-blue-500 outline-none" placeholder="A, B...">
-                </div>
-            </div>
-
-            <hr class="border-gray-700/50">
 
             <div class="grid grid-cols-3 gap-4">
-                <div class="col-span-1">
-                    <label class="block text-xs uppercase text-blue-400 mb-1 font-bold">No. Parcels</label>
-                    <input type="number" name="parcels" id="parcelsInput" oninput="calcTotal()" required
-                           class="w-full h-12 bg-blue-900/20 border border-blue-500/50 rounded p-3 text-xl font-bold text-center text-white placeholder-gray-600 focus:border-blue-500 outline-none" placeholder="0">
+                <div>
+                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">From</label>
+                    <input type="text" name="from" value="Mumbai" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
                 </div>
                 <div>
-                    <label class="block text-xs uppercase text-gray-500 mb-1">Box Rate</label>
-                    <input type="number" step="0.1" name="box_rate" id="boxRateInput" oninput="calcTotal()"
-                           class="w-full h-12 bg-black/40 border border-gray-700 rounded p-3 text-center text-white focus:border-blue-500 outline-none">
+                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">To</label>
+                    <input type="text" name="to" value="Udupi" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
                 </div>
                 <div>
-                    <label class="block text-xs uppercase text-gray-500 mb-1">Trans. Rate</label>
-                    <input type="number" step="0.1" name="transport_rate" id="transportRateInput" oninput="calcTotal()"
-                           class="w-full h-12 bg-black/40 border border-gray-700 rounded p-3 text-center text-white focus:border-blue-500 outline-none">
+                    <label class="block text-xs uppercase text-blue-400 font-bold mb-1">RR No.</label>
+                    <input type="text" name="rr_no" placeholder="RR Number" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white focus:border-blue-500">
                 </div>
             </div>
 
-            <div class="bg-black/20 p-4 rounded-lg border border-white/5">
-                <p class="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-3">Additional Charges</p>
-                <div class="grid grid-cols-3 md:grid-cols-5 gap-2">
-                    <div class="relative">
-                        <span class="absolute top-1 left-1 text-[8px] text-gray-500 uppercase">Hamali</span>
-                        <input type="number" step="0.1" name="hamali" id="hamali" oninput="calcTotal()" class="w-full bg-black/40 border border-gray-700 rounded p-2 pt-4 text-right text-white text-xs">
-                    </div>
-                    <div class="relative">
-                        <span class="absolute top-1 left-1 text-[8px] text-gray-500 uppercase">Stat</span>
-                        <input type="number" step="0.1" name="stat_charges" id="stat" oninput="calcTotal()" class="w-full bg-black/40 border border-gray-700 rounded p-2 pt-4 text-right text-white text-xs">
-                    </div>
-                    <div class="relative">
-                        <span class="absolute top-1 left-1 text-[8px] text-gray-500 uppercase">CR</span>
-                        <input type="number" step="0.1" name="cr_charges" id="cr" oninput="calcTotal()" class="w-full bg-black/40 border border-gray-700 rounded p-2 pt-4 text-right text-white text-xs">
-                    </div>
-                    <div class="relative">
-                        <span class="absolute top-1 left-1 text-[8px] text-gray-500 uppercase">Rail</span>
-                        <input type="number" step="0.1" name="railway_charges" id="rail" oninput="calcTotal()" class="w-full bg-black/40 border border-gray-700 rounded p-2 pt-4 text-right text-white text-xs">
-                    </div>
-                    <div class="relative">
-                        <span class="absolute top-1 left-1 text-[8px] text-gray-500 uppercase">Demur</span>
-                        <input type="number" step="0.1" name="demurrage" id="demur" oninput="calcTotal()" class="w-full bg-black/40 border border-gray-700 rounded p-2 pt-4 text-right text-white text-xs">
-                    </div>
+            <hr class="border-gray-700">
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
+
+                <div>
+                    <label class="block text-xs uppercase text-white font-bold mb-1">Parcels</label>
+                    <input type="number" name="parcels" id="parcels" oninput="calc()" placeholder="0" required
+                           class="w-full bg-blue-900/20 border border-blue-500/50 rounded p-3 text-white font-bold text-center text-lg">
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Railway Fare</label>
+                    <input type="number" step="0.1" name="railway" id="railway" oninput="calc()" placeholder="0"
+                           class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white text-center">
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Handling</label>
+                    <input type="number" step="0.1" name="handling" id="handling" readonly tabindex="-1"
+                           class="w-full bg-gray-800/50 border border-gray-800 rounded p-3 text-gray-300 text-center cursor-not-allowed">
+                    <p class="text-[9px] text-gray-600 text-center mt-1">Auto (Rate × Parcels)</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Transport</label>
+                    <input type="number" step="0.1" name="transport" id="transport" readonly tabindex="-1"
+                           class="w-full bg-gray-800/50 border border-gray-800 rounded p-3 text-gray-300 text-center cursor-not-allowed">
+                    <p class="text-[9px] text-gray-600 text-center mt-1">Auto (Trans Rate)</p>
                 </div>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-4 items-end">
-                <div class="w-full">
-                    <label class="block text-xs uppercase text-gray-500 mb-1">Remarks</label>
-                    <input type="text" name="remarks" class="w-full h-10 bg-black/40 border border-gray-700 rounded p-2 text-white text-sm focus:border-blue-500 outline-none" placeholder="Optional">
-                </div>
-
-                <div class="bg-gradient-to-br from-blue-900/40 to-black border border-blue-500/30 p-3 rounded-lg min-w-[160px] text-right shadow-lg">
-                    <p class="text-[10px] text-blue-300 uppercase font-bold tracking-wider">Grand Total</p>
-                    <p class="text-2xl font-bold text-white tracking-tight" id="liveTotalDisplay">₹ 0</p>
-                </div>
+            <div class="bg-gray-800/50 p-4 rounded-lg flex justify-between items-center border border-white/5">
+                <span class="text-gray-400 uppercase text-xs font-bold">Total Bill Amount</span>
+                <span class="text-2xl font-bold text-white" id="totalDisplay">₹ 0</span>
             </div>
 
-            <button type="submit" class="w-full bg-white text-black font-bold py-4 rounded-lg mt-2 hover:bg-gray-200 transition transform hover:scale-[1.01] tracking-widest text-sm active:scale-95 shadow-xl">
-                SAVE ENTRY >
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-lg shadow-lg transition">
+                SAVE ENTRY
             </button>
         </form>
     </div>
 
-    <div class="mt-8">
-        <h3 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider px-2">Recently Added Today</h3>
-        <div class="space-y-2">
-            {% for entry in entries %}
-            <div class="glass p-3 rounded-lg border border-white/5 flex justify-between items-center group hover:bg-white/5 transition">
-                <div class="flex items-center gap-3">
-                    <div class="bg-gray-800 p-2 rounded text-xs font-mono text-gray-400">#{{ loop.index }}</div>
-                    <div>
-                        <div class="text-white font-bold text-sm">{{ entry.vendor.name }}</div>
-                        <div class="text-xs text-gray-500 flex gap-2">
-                            <span>{{ entry.parcels }} Pcls</span>
-                            {% if entry.invoice_number %}<span>• Inv: {{ entry.invoice_number }}</span>{% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <div class="text-right">
-                        <div class="text-white font-bold text-sm">₹{{ "{:,.0f}".format(entry.grand_total) }}</div>
-                        <div class="text-[10px] text-gray-500">{{ entry.created_at.strftime('%H:%M') }}</div>
-                    </div>
-                    <a href="/entry/delete/{{ entry.id }}" onclick="return confirm('Delete entry?')" class="text-gray-600 hover:text-red-500 transition px-2">
-                        ✕
-                    </a>
-                </div>
+    <div class="mt-8 space-y-2">
+        {% for entry in entries %}
+        <div class="glass p-4 rounded-lg flex justify-between items-center border border-white/5">
+            <div>
+                <span class="text-white font-bold">{{ entry.vendor.name }}</span>
+                <span class="text-gray-500 text-xs ml-2">RR: {{ entry.rr_no }}</span>
             </div>
-            {% else %}
-            <div class="text-center p-6 text-gray-600 text-xs italic border border-dashed border-gray-800 rounded-lg">
-                No entries added yet today.
+            <div class="flex items-center gap-4">
+                <span class="text-blue-400 font-bold">₹ {{ "{:,.0f}".format(entry.grand_total) }}</span>
+                <a href="/entry/delete/{{ entry.id }}" class="text-gray-600 hover:text-red-500 px-2">✕</a>
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
     </div>
 </div>
 
 <script>
-    // --- TYPEWRITER EFFECT ---
-    const textLines = ["kps.admin ~/logistics", "$ init system...", "> Loading Rate Cards... [OK]", "> New Pricing Engine... [ONLINE]", "> User: {{ user.username }}", "$ ready_"];
-    const element = document.getElementById('typewriter');
-    let lineIndex = 0, charIndex = 0;
+    function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
 
-    function typeWriter() {
-        if (element && lineIndex < textLines.length) {
-            if (charIndex < textLines[lineIndex].length) {
-                element.innerHTML += textLines[lineIndex].charAt(charIndex++);
-                setTimeout(typeWriter, 30);
-            } else {
-                element.innerHTML += "<br/>";
-                lineIndex++;
-                charIndex = 0;
-                setTimeout(typeWriter, 300);
-            }
-        }
-    }
+    function calc() {
+        const parcels = getVal('parcels');
+        const railway = getVal('railway');
 
-    // --- 1. UPDATE RATES WHEN VENDOR CHANGES ---
-    function updateRates() {
+        // Get Vendor Rates
         const vendorSelect = document.getElementById('vendorSelect');
-        const selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
+        const selectedOpt = vendorSelect.options[vendorSelect.selectedIndex];
+        const rate = parseFloat(selectedOpt.getAttribute('data-rate')) || 0;
+        const transRate = parseFloat(selectedOpt.getAttribute('data-trans')) || 0;
 
-        // Fetch data attributes
-        const boxRate = selectedOption.getAttribute('data-rate') || 0;
-        const transRate = selectedOption.getAttribute('data-transport') || 0;
+        // Auto Calculate
+        const handling = parcels * rate;
 
-        // Set inputs
-        document.getElementById('boxRateInput').value = boxRate;
-        document.getElementById('transportRateInput').value = transRate;
-
-        // Recalculate totals
-        calcTotal();
-    }
-
-    // --- 2. LIVE CALCULATION ---
-    function getVal(id) {
-        return parseFloat(document.getElementById(id).value) || 0;
-    }
-
-    function calcTotal() {
-        const parcels = getVal('parcelsInput');
-        const boxRate = getVal('boxRateInput');
-        const transRate = getVal('transportRateInput');
-
-        // Core Logic
-        const freight = parcels * boxRate;
+        // Logic: Transport is usually flat per RR, or per parcel?
+        // Implementing: Per Parcel as per standard logic, but you can change to flat if needed
         const transport = parcels * transRate;
 
-        // Extras
-        const extras = getVal('hamali') + getVal('stat') + getVal('cr') + getVal('rail') + getVal('demur');
+        document.getElementById('handling').value = handling.toFixed(1);
+        document.getElementById('transport').value = transport.toFixed(1);
 
-        const total = freight + transport + extras;
-
-        // Update UI
-        document.getElementById('liveTotalDisplay').innerText = "₹ " + total.toLocaleString('en-IN');
+        const total = handling + transport + railway;
+        document.getElementById('totalDisplay').innerText = "₹ " + total.toLocaleString('en-IN');
     }
-
-    // Run on load
-    window.onload = function() {
-        typeWriter();
-
-        // If a vendor is pre-selected (default), set rates immediately
-        const vendorSelect = document.getElementById('vendorSelect');
-        if(vendorSelect.value) {
-            updateRates();
-        }
-    };
 </script>
 {% endblock %}
