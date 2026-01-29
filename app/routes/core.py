@@ -61,7 +61,13 @@ def home():
 @login_required
 def view_data():
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    vendor_filter = request.args.get('vendor', 'Shiva Express') # Default: Shiva Express
+
+    # --- STRICT DEFAULT FIX ---
+    # If no vendor is in the URL, FORCE 'Shiva Express'
+    vendor_filter = request.args.get('vendor')
+    if not vendor_filter:
+        vendor_filter = 'Shiva Express'
+
     search_q = request.args.get('q')
 
     query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
@@ -94,11 +100,10 @@ def admin_view():
         return redirect(url_for('core.view_data'))
 
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    vendor_filter = request.args.get('vendor', 'All') # Default: All Vendors
+    vendor_filter = request.args.get('vendor', 'All') # Admin View Defaults to All
 
     query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
 
-    # Filter by vendor if not "All"
     if vendor_filter and vendor_filter != 'All':
         query = query.filter_by(vendor=vendor_filter)
 
@@ -141,7 +146,6 @@ def edit_entry(id):
             db.session.commit()
             flash('Entry Updated')
 
-            # Smart Redirect: Go back to admin view if that's where we came from
             if request.referrer and 'admin_view' in request.referrer:
                 return redirect(url_for('core.admin_view'))
             return redirect(url_for('core.view_data'))

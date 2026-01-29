@@ -52,7 +52,7 @@
                             <option value="{{ v.name }}"
                                     data-rate="{{ v.rate_per_parcel }}"
                                     data-transport="{{ v.transport_rate }}"
-                                    {% if v.name == 'Shiva Express' %}selected{% endif %}>
+                                    {% if v.name.strip() == 'Shiva Express' %}selected{% endif %}>
                             {{ v.name }}
                             </option>
                             {% endfor %}
