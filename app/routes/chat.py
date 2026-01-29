@@ -20,16 +20,33 @@ def chat_response():
 
         res = {"text": "DATA_INSUFFICIENT: Command outside neural mapping. Try 'Help'.", "type": "neutral", "link": None}
 
+        # --- SMART ACTION: DATABASE UPDATES VIA CHAT ---
+        # Detects patterns like "paid shiva 5000" or "received 2000 from udupi"
+        if any(x in user_msg for x in ['paid', 'received', 'clear', 'collected']):
+            parts = user_msg.split()
+            amount = next((float(s) for s in parts if s.replace('.','',1).isdigit()), None)
+            vendors = Vendor.query.all()
+            target_v = next((v for v in vendors if v.name.lower() in user_msg), None)
+
+            if target_v and amount:
+                old_bal = target_v.pending_balance
+                target_v.pending_balance -= amount
+                db.session.commit()
+                AuditLog.log(None, "CHAT_UPDATE", f"Reduced {target_v.name} balance by {amount}")
+                res["text"] = f"✅ <b>TRANSACTION_SUCCESS:</b> Updated {target_v.name}.<br>Old Bal: ₹{old_bal:,.0f}<br>New Bal: <b>₹{target_v.pending_balance:,.0f}</b>"
+                res["type"] = "success"
+                return jsonify(res)
+
         # --- EXTENDED INTENT MAPPING (200+ Variations) ---
         intents = {
             "GREET": ['hi', 'hello', 'hey', 'morning', 'evening', 'status', 'online', 'system', 'up'],
             "REV": ['revenue', 'sales', 'money', 'collection', 'earnings', 'total', 'cash', 'income', 'billing', 'profit', 'margin', 'made'],
             "LOG": ['log', 'activity', 'who', 'user', 'action', 'history', 'event', 'audit', 'track', 'last', 'security'],
-            "ERR": ['error', 'missing', 'check', 'issue', 'wrong', 'fix', 'problem', 'rr', 'empty', 'blank', 'incomplete'],
+            "ERR": ['error', 'missing', 'check', 'issue', 'wrong', 'fix', 'problem', 'rr', 'empty', 'blank', 'incomplete', 'audit'],
             "BILL": ['invoice', 'bill', 'download', 'pdf', 'generate', 'report', 'print', 'statement', 'tax'],
-            "VENDOR": ['vendor', 'rate', 'pending', 'balance', 'owe', 'due', 'charge', 'pricing', 'shiva', 'udupi', 'naturals'],
-            "ROUTE": ['route', 'top', 'destination', 'where', 'place', 'city', 'path', 'flow', 'mumbai', 'mangalore'],
-            "VOL": ['parcel', 'count', 'volume', 'many', 'load', 'quantity', 'box', 'shipment', 'units', 'kg'],
+            "VENDOR": ['vendor', 'rate', 'pending', 'balance', 'owe', 'due', 'charge', 'pricing'],
+            "ROUTE": ['route', 'top', 'destination', 'where', 'place', 'city', 'path', 'flow'],
+            "VOL": ['parcel', 'count', 'volume', 'many', 'load', 'quantity', 'box', 'shipment', 'units'],
             "PERF": ['growth', 'performance', 'compare', 'analysis', 'better', 'worse', 'stat', 'metrics', 'trend']
         }
 
@@ -39,7 +56,7 @@ def chat_response():
             missing = Entry.query.filter(Entry.date == today, (Entry.rr_no == '') | (Entry.rr_no == None)).count()
             res["text"] = f"""
                 <div class='space-y-1'>
-                    <p class='text-blue-400 font-bold uppercase'>System_Online_v3.0</p>
+                    <p class='text-blue-400 font-bold uppercase tracking-widest'>System_Online_v3.0</p>
                     <p class='text-[11px]'>• Daily Revenue: <b>₹{d_rev:,.0f}</b></p>
                     <p class='text-[11px]'>• Pending RR: <b class='{ 'text-red-400' if missing > 0 else 'text-green-400' }'>{missing}</b></p>
                     <p class='text-[10px] text-gray-500 mt-2'>Awaiting high-level command...</p>
@@ -48,7 +65,6 @@ def chat_response():
 
         # --- 2. PROFIT MARGIN & FINANCIAL INTELLIGENCE ---
         elif any(x in user_msg for x in intents["REV"]) or any(x in user_msg for x in intents["PERF"]):
-            # Calculate Revenue vs Railway Cost (Profit Analysis)
             data = db.session.query(
                 func.sum(Entry.grand_total),
                 func.sum(Entry.railway_chg)
@@ -88,7 +104,7 @@ def chat_response():
         # --- 5. SYSTEM RECOVERY (Audit) ---
         elif any(x in user_msg for x in intents["ERR"]):
             errors = Entry.query.filter((Entry.rr_no == '') | (Entry.rr_no == None)).count()
-            res["text"] = f"INTEGRITY_AUDIT: <b class='text-red-500'>{errors} anomalies</b> detected in current dataset. Correct RR numbers to prevent billing delays."
+            res["text"] = f"INTEGRITY_AUDIT: <b class='text-red-500'>{errors} anomalies</b> detected. Correct RR numbers to prevent billing delays."
             res["type"] = "error"
             res["link"] = "/view"
 
@@ -99,10 +115,17 @@ def chat_response():
             res["text"] = f"RECENT_TRACE_SEQUENCE:<br>{log_text}"
 
         # --- 7. HELP DIRECTORY ---
-        elif any(x in user_msg for x in ['help', 'directory', 'list']):
-            res["text"] = "DEEP_CORE_MAPPING:<br>1. Profit/Margin Analysis<br>2. Risk Assessment (Vendors)<br>3. Hub Analytics (Routes)<br>4. Integrity Audit (Errors)<br>5. Auth Tracking (Logs)"
+        elif any(x in user_msg for x in ['help', 'directory', 'list', 'tasks', 'can do']):
+            res["text"] = """
+            <b>CORE_CAPABILITIES_v3.0:</b><br>
+            • <b>Finance:</b> Type "Paid Shiva 5000"<br>
+            • <b>Profit:</b> Ask "What is my margin?"<br>
+            • <b>Audit:</b> Ask "Run integrity check"<br>
+            • <b>Tracking:</b> "Who made the last change?"
+            """
 
         return jsonify(res)
 
     except Exception as e:
+        print(f"❌ Core Error: {str(e)}")
         return jsonify({"text": f"SYSTEM_FATAL_ERROR: {str(e)}", "type": "error"})
