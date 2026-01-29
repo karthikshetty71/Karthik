@@ -7,6 +7,23 @@ from sqlalchemy import func
 
 core_bp = Blueprint('core', __name__)
 
+# --- HELPER: Fixes "could not convert string to float" error ---
+def safe_float(value):
+    try:
+        if not value or value.strip() == '':
+            return 0.0
+        return float(value)
+    except (ValueError, TypeError):
+        return 0.0
+
+def safe_int(value):
+    try:
+        if not value or value.strip() == '':
+            return 0
+        return int(value)
+    except (ValueError, TypeError):
+        return 0
+
 @core_bp.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
@@ -14,18 +31,25 @@ def home():
 
     if request.method == 'POST':
         try:
+            # 1. Get Values Safely
+            handling = safe_float(request.form.get('handling'))
+            railway = safe_float(request.form.get('railway'))
+            transport = safe_float(request.form.get('transport'))
+            parcels = safe_int(request.form.get('parcels'))
+
+            # 2. Create Entry
             new_entry = Entry(
                 date=datetime.strptime(request.form['date'], '%Y-%m-%d'),
-                bill_no=f"B-{datetime.now().strftime('%d%H%M')}", # Simple Auto-Bill No
+                bill_no=f"B-{datetime.now().strftime('%d%H%M')}",
                 rr_no=request.form['rr_no'],
                 vendor=request.form['vendor'],
                 ship_from=request.form['from'],
                 ship_to=request.form['to'],
-                parcels=int(request.form['parcels']),
-                handling_chg=float(request.form['handling']),
-                railway_chg=float(request.form['railway']),
-                transport_chg=float(request.form['transport']),
-                total=float(request.form['handling']) + float(request.form['railway']) + float(request.form['transport'])
+                parcels=parcels,
+                handling_chg=handling,
+                railway_chg=railway,
+                transport_chg=transport,
+                total=handling + railway + transport
             )
             db.session.add(new_entry)
             db.session.commit()
@@ -41,7 +65,7 @@ def home():
 
     return render_template('home.html',
                            today=today,
-                           vendors=Vendor.query.all(), # Sends vendors to dropdown
+                           vendors=Vendor.query.all(),
                            today_rev=today_rev,
                            today_parcels=today_parcels)
 
@@ -49,15 +73,12 @@ def home():
 @login_required
 def view_data():
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    vendor_filter = request.args.get('vendor') # Removed 'All' default here
+    vendor_filter = request.args.get('vendor')
     search_q = request.args.get('q')
 
     query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
 
-    # Logic: If user selects a vendor, filter by it.
-    # If they don't (first load), we might want to show EVERYTHING or just the first vendor.
-    # Since you removed "All", usually we just filter if a specific one is picked.
-    if vendor_filter and vendor_filter != 'All':
+    if vendor_filter and vendor_filter != '':
         query = query.filter_by(vendor=vendor_filter)
 
     if search_q:
@@ -69,7 +90,6 @@ def view_data():
 
     entries = query.order_by(Entry.date.desc()).all()
 
-    # CRITICAL: Sending vendors to the template so the dropdown works
     return render_template('view_data.html',
                            entries=entries,
                            month=month,
@@ -91,19 +111,25 @@ def delete_entry(id):
 def edit_entry(id):
     entry = Entry.query.get_or_404(id)
     if request.method == 'POST':
-        entry.date = datetime.strptime(request.form['date'], '%Y-%m-%d')
-        entry.vendor = request.form['vendor']
-        entry.rr_no = request.form['rr_no']
-        entry.ship_from = request.form['from']
-        entry.ship_to = request.form['to']
-        entry.parcels = int(request.form['parcels'])
-        entry.handling_chg = float(request.form['handling'])
-        entry.railway_chg = float(request.form['railway'])
-        entry.transport_chg = float(request.form['transport'])
-        entry.total = entry.handling_chg + entry.railway_chg + entry.transport_chg
+        try:
+            entry.date = datetime.strptime(request.form['date'], '%Y-%m-%d')
+            entry.vendor = request.form['vendor']
+            entry.rr_no = request.form['rr_no']
+            entry.ship_from = request.form['from']
+            entry.ship_to = request.form['to']
 
-        db.session.commit()
-        flash('Entry Updated')
-        return redirect(url_for('core.view_data'))
+            # Use safe converters here too
+            entry.parcels = safe_int(request.form.get('parcels'))
+            entry.handling_chg = safe_float(request.form.get('handling'))
+            entry.railway_chg = safe_float(request.form.get('railway'))
+            entry.transport_chg = safe_float(request.form.get('transport'))
+
+            entry.total = entry.handling_chg + entry.railway_chg + entry.transport_chg
+
+            db.session.commit()
+            flash('Entry Updated')
+            return redirect(url_for('core.view_data'))
+        except Exception as e:
+            flash(f"Error: {str(e)}")
 
     return render_template('edit.html', entry=entry, vendors=Vendor.query.all())
