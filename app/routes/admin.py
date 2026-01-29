@@ -3,36 +3,65 @@ from flask_login import login_required, current_user
 from app.models import Vendor, User, Entry, AuditLog
 from app.extensions import db
 import os
+import psutil # Requires: pip install psutil
+import platform
 
 admin_bp = Blueprint('admin', __name__)
 
-# --- MAIN SETTINGS PAGE (GET ONLY) ---
+# --- MAIN SETTINGS PAGE ---
 @admin_bp.route('/settings', methods=['GET'])
 @login_required
 def settings():
     """
-    Renders the main settings dashboard with Tabs.
-    Gathers data for Vendors, Users, System Stats, and Audit Logs.
+    Renders the dashboard with System Metrics, Vendor Master, and Logs.
     """
-    # 1. Fetch Vendor Data (Visible to all)
+    # 1. Vendor Data (Visible to All)
     vendors = Vendor.query.all()
 
-    # 2. Admin-Only Data (Users, Stats, Logs)
+    # 2. Admin Data Containers
     users = []
     audit_logs = []
+
+    # 3. System Metrics Defaults
+    system_stats = {
+        'cpu_percent': 0,
+        'ram_percent': 0,
+        'ram_used': "0 GB",
+        'ram_total': "0 GB",
+        'disk_percent': 0,
+        'disk_free': "0 GB",
+        'os_info': "Unknown"
+    }
+
     db_size = "Unknown"
     total_entries = 0
 
     if current_user.is_admin:
-        # Fetch Users
         users = User.query.all()
-
-        # Fetch Audit Logs (Last 50 events)
-        audit_logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(50).all()
-
-        # System Stats
+        # Fetch last 100 logs
+        audit_logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(100).all()
         total_entries = Entry.query.count()
+
+        # --- FETCH REAL-TIME METRICS ---
         try:
+            # CPU
+            system_stats['cpu_percent'] = psutil.cpu_percent(interval=0.1)
+
+            # RAM
+            ram = psutil.virtual_memory()
+            system_stats['ram_percent'] = ram.percent
+            system_stats['ram_used'] = f"{ram.used / (1024**3):.1f} GB"
+            system_stats['ram_total'] = f"{ram.total / (1024**3):.1f} GB"
+
+            # DISK
+            disk = psutil.disk_usage('/')
+            system_stats['disk_percent'] = disk.percent
+            system_stats['disk_free'] = f"{disk.free / (1024**3):.1f} GB"
+
+            # OS Info
+            system_stats['os_info'] = f"{platform.system()} {platform.release()}"
+
+            # Database File Size
             db_filename = 'logistics.db'
             paths = [
                 os.path.join(os.getcwd(), db_filename),
@@ -43,18 +72,18 @@ def settings():
                     size_mb = os.path.getsize(path) / (1024 * 1024)
                     db_size = f"{size_mb:.2f} MB"
                     break
-        except:
-            pass
+        except Exception as e:
+            print(f"Metrics Error: {e}")
 
     return render_template('settings.html',
                            vendors=vendors,
                            users=users,
+                           system_stats=system_stats, # Passing new metrics
                            db_size=db_size,
                            total_entries=total_entries,
                            audit_logs=audit_logs)
 
 # --- VENDOR ACTIONS ---
-
 @admin_bp.route('/settings/vendor/add', methods=['POST'])
 @login_required
 def add_vendor():
@@ -77,7 +106,7 @@ def add_vendor():
             ))
             db.session.commit()
 
-            # LOGGING
+            # Enhanced Log
             AuditLog.log(current_user, "ADD VENDOR", f"Added new vendor: {name}")
             flash(f"Vendor '{name}' added.")
 
@@ -89,30 +118,36 @@ def update_vendor(id):
     vendor = Vendor.query.get_or_404(id)
 
     try:
-        # 1. Allow ANY user to update Pending Balance
+        # 1. Update Pending Balance (Allowed for ANY user)
         new_pending = request.form.get('pending_balance')
         if new_pending is not None:
             old_balance = vendor.pending_balance
             vendor.pending_balance = float(new_pending)
 
-            # Log specific balance change if that's the only thing happening (Standard User)
-            if not current_user.is_admin and old_balance != vendor.pending_balance:
-                AuditLog.log(current_user, "UPDATE BALANCE", f"Updated {vendor.name} balance to {vendor.pending_balance}")
+            # Log significant balance changes
+            if old_balance != vendor.pending_balance:
+                AuditLog.log(current_user, "UPDATE BALANCE", f"{vendor.name}: {old_balance} -> {vendor.pending_balance}")
 
-        # 2. Only ADMINS can update critical fields
+        # 2. Update Critical Info (Admin Only)
         if current_user.is_admin:
-            vendor.rate_per_parcel = float(request.form.get('rate'))
+            # Capture old rate for comparison logging
+            old_rate = vendor.rate_per_parcel
+            new_rate = float(request.form.get('rate'))
+
+            vendor.rate_per_parcel = new_rate
             vendor.transport_rate = float(request.form.get('transport'))
             vendor.billing_name = request.form.get('billing_name')
             vendor.billing_address = request.form.get('billing_address')
-
             vendor.show_rr = bool(request.form.get('show_rr'))
             vendor.show_handling = bool(request.form.get('show_handling'))
             vendor.show_railway = bool(request.form.get('show_railway'))
             vendor.show_transport = bool(request.form.get('show_transport'))
 
-            # Log full update
-            AuditLog.log(current_user, "UPDATE VENDOR", f"Updated details for {vendor.name}")
+            # Smart Logging: Check if rate changed
+            if old_rate != new_rate:
+                AuditLog.log(current_user, "UPDATE RATE", f"{vendor.name}: Rate changed {old_rate} -> {new_rate}")
+            else:
+                AuditLog.log(current_user, "UPDATE VENDOR", f"Updated details for {vendor.name}")
 
         db.session.commit()
         flash(f"Updated {vendor.name}")
@@ -122,11 +157,10 @@ def update_vendor(id):
 
     return redirect(url_for('admin.settings'))
 
-@admin_bp.route('/settings/vendor/delete/<int:id>', methods=['GET'])
+@admin_bp.route('/settings/vendor/delete/<int:id>')
 @login_required
 def delete_vendor(id):
     if not current_user.is_admin:
-        flash("Access Denied.")
         return redirect(url_for('admin.settings'))
 
     v = Vendor.query.get_or_404(id)
@@ -134,7 +168,7 @@ def delete_vendor(id):
     db.session.delete(v)
     db.session.commit()
 
-    # LOGGING
+    # Log Deletion
     AuditLog.log(current_user, "DELETE VENDOR", f"Deleted vendor: {name}")
     flash(f"Deleted vendor: {name}")
 
@@ -151,13 +185,10 @@ def set_default_vendor(id):
     v.is_default = True
     db.session.commit()
 
-    # LOGGING
-    AuditLog.log(current_user, "UPDATE VENDOR", f"Set {v.name} as default vendor")
-
+    AuditLog.log(current_user, "UPDATE VENDOR", f"Set {v.name} as default")
     return redirect(url_for('admin.settings'))
 
-# --- USER ACTIONS (ADMIN ONLY) ---
-
+# --- USER ACTIONS ---
 @admin_bp.route('/settings/user/add', methods=['POST'])
 @login_required
 def add_user():
@@ -176,7 +207,6 @@ def add_user():
             db.session.add(new_user)
             db.session.commit()
 
-            # LOGGING
             AuditLog.log(current_user, "ADD USER", f"Created user: {username}")
             flash(f'User {username} added')
 
@@ -193,25 +223,22 @@ def delete_user(id):
         return redirect(url_for('admin.settings'))
 
     user = User.query.get_or_404(id)
-    username = user.username # Capture before delete
+    username = user.username
     db.session.delete(user)
     db.session.commit()
 
-    # LOGGING
     AuditLog.log(current_user, "DELETE USER", f"Deleted user: {username}")
     flash(f'Deleted user {username}')
 
     return redirect(url_for('admin.settings'))
 
-# --- SYSTEM ACTIONS (ADMIN ONLY) ---
-
+# --- BACKUP ---
 @admin_bp.route('/settings/backup')
 @login_required
 def backup():
     if not current_user.is_admin:
         return redirect(url_for('core.home'))
 
-    # Optional: Log backup creation
     AuditLog.log(current_user, "SYSTEM", "Downloaded Database Backup")
 
     db_filename = 'logistics.db'
