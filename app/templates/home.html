@@ -49,7 +49,9 @@
                         <select name="vendor" id="vendorSelect" onchange="calculateCharges()"
                                 class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 appearance-none truncate pr-8">
                             {% for v in vendors %}
-                            <option value="{{ v.name }}" data-rate="{{ v.rate_per_parcel }}"
+                            <option value="{{ v.name }}"
+                                    data-rate="{{ v.rate_per_parcel }}"
+                                    data-transport="{{ v.transport_rate }}"
                                     {% if v.name == 'Shiva Express' %}selected{% endif %}>
                             {{ v.name }}
                             </option>
@@ -111,28 +113,52 @@
 </div>
 
 <script>
+    // --- TYPEWRITER EFFECT ---
     const textLines = ["kps.admin ~/logistics", "$ init system...", "> Loading Rate Cards... [OK]", "> Auto-Calculation Engine... [ONLINE]", "> User: {{ current_user.username }}", "$ ready_"];
     const element = document.getElementById('typewriter');
     let lineIndex = 0, charIndex = 0;
 
     function typeWriter() {
         if (element && lineIndex < textLines.length) {
-            if (charIndex < textLines[lineIndex].length) { element.innerHTML += textLines[lineIndex].charAt(charIndex++); setTimeout(typeWriter, 30); }
-            else { element.innerHTML += "<br/>"; lineIndex++; charIndex = 0; setTimeout(typeWriter, 300); }
+            if (charIndex < textLines[lineIndex].length) {
+                element.innerHTML += textLines[lineIndex].charAt(charIndex++);
+                setTimeout(typeWriter, 30);
+            } else {
+                element.innerHTML += "<br/>";
+                lineIndex++;
+                charIndex = 0;
+                setTimeout(typeWriter, 300);
+            }
         }
     }
-    window.onload = typeWriter;
 
+    // --- CALCULATION LOGIC ---
     function calculateCharges() {
         const parcels = parseFloat(document.getElementById('parcelsInput').value) || 0;
         const vendorSelect = document.getElementById('vendorSelect');
         const selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
-        const ratePerParcel = parseFloat(selectedOption.getAttribute('data-rate')) || 70;
-        const handling = parcels * ratePerParcel;
+
+        // Retrieve rates from data attributes
+        const ratePerParcel = parseFloat(selectedOption.getAttribute('data-rate')) || 0;
+        const flatTransport = parseFloat(selectedOption.getAttribute('data-transport')) || 0;
+
+        let handling = 0;
         let transport = 0;
-        if(parcels > 0) { transport = (parcels <= 5) ? 500 : 700; }
+
+        // Apply logic: Handling is Multiplied, Transport is Flat
+        if (parcels > 0) {
+            handling = parcels * ratePerParcel;
+            transport = flatTransport;
+        }
+
         document.getElementById('handlingInput').value = handling;
         document.getElementById('transportInput').value = transport;
     }
+
+    // Run typewriter & initial calculation on load
+    window.onload = function() {
+        typeWriter();
+        calculateCharges();
+    };
 </script>
 {% endblock %}

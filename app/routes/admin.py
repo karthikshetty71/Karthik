@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, send_file, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, send_file, flash
 from flask_login import login_required, current_user
 from app.models import Vendor, User
 from app.extensions import db
@@ -16,9 +16,10 @@ def settings():
         return redirect(url_for('core.home'))
 
     if request.method == 'POST':
-        # Add New Vendor with Rate
+        # Add New Vendor
         name = request.form.get('vendor_name')
-        rate = float(request.form.get('rate', 70.0))
+        rate = float(request.form.get('rate', 70.0))       # Default Handling Rate
+        transport = float(request.form.get('transport', 0.0)) # Default Transport Rate
 
         if name:
             # Check if exists first
@@ -26,7 +27,8 @@ def settings():
             if existing:
                 flash(f"Vendor '{name}' already exists.")
             else:
-                db.session.add(Vendor(name=name, rate_per_parcel=rate))
+                # Add with both rates
+                db.session.add(Vendor(name=name, rate_per_parcel=rate, transport_rate=transport))
                 db.session.commit()
                 flash(f"Vendor '{name}' added successfully.")
         return redirect(url_for('admin.settings'))
@@ -42,12 +44,13 @@ def update_vendor_rate(id):
 
     vendor = Vendor.query.get_or_404(id)
     try:
-        new_rate = float(request.form.get('rate'))
-        vendor.rate_per_parcel = new_rate
+        # Update both rates from the table inputs
+        vendor.rate_per_parcel = float(request.form.get('rate'))
+        vendor.transport_rate = float(request.form.get('transport'))
         db.session.commit()
-        flash(f"Updated rate for {vendor.name}")
+        flash(f"Updated rates for {vendor.name}")
     except:
-        flash("Error updating rate. Please enter a valid number.")
+        flash("Error updating rates. Please enter valid numbers.")
     return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/delete_vendor/<int:id>')
@@ -111,7 +114,7 @@ def backup():
     if not current_user.is_admin:
         return redirect(url_for('core.home'))
 
-    # robust path finding
+    # Robust path finding to download the DB file
     db_filename = 'logistics.db'
 
     # 1. Try Root Folder
@@ -120,7 +123,7 @@ def backup():
     # 2. Try Instance Folder (Standard Flask location)
     db_path_instance = os.path.join(os.getcwd(), 'instance', db_filename)
 
-    # 3. Try relative to this file (just in case)
+    # 3. Try relative (Fallback)
     db_path_relative = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'instance', db_filename)
 
     if os.path.exists(db_path_root):
@@ -130,5 +133,4 @@ def backup():
     elif os.path.exists(db_path_relative):
          return send_file(db_path_relative, as_attachment=True)
     else:
-        # Debug info if file is truly lost
         return f"Error: Database not found.<br>Checked:<br>{db_path_root}<br>{db_path_instance}", 404
