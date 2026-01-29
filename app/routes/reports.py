@@ -21,7 +21,7 @@ def selection():
 @login_required
 def generate_bill():
     month = request.args.get('month')
-    vendor_id = request.args.get('vendor') # Changed to ID
+    vendor_id = request.args.get('vendor')
     include_pending = request.args.get('include_pending')
 
     if not month or not vendor_id:
@@ -38,7 +38,7 @@ def generate_bill():
     display_name = vendor_obj.billing_name if vendor_obj.billing_name else vendor_obj.name
     display_address = vendor_obj.billing_address if vendor_obj.billing_address else "Manipal / Udupi"
 
-    # 3. Fetch Entries (Using Relationship)
+    # 3. Fetch Entries
     entries = Entry.query.filter(
         func.strftime('%Y-%m', Entry.date) == month,
         Entry.vendor_id == vendor_obj.id
@@ -48,7 +48,7 @@ def generate_bill():
         flash(f"No records found for {vendor_obj.name} in {month}")
         return redirect(url_for('reports.selection'))
 
-    # 4. Calculate Totals (FIXED: Uses grand_total)
+    # 4. Calculate Totals (Using grand_total)
     total_parcels = sum(e.parcels for e in entries)
     current_bill_total = sum(e.grand_total for e in entries)
 
@@ -69,7 +69,6 @@ def generate_bill():
     except:
         total_words = f"{grand_total} Rupees Only"
 
-    # 8. Logging
     AuditLog.log(current_user, "INVOICE", f"Generated invoice for {vendor_obj.name} ({month})")
 
     return render_template('invoice_print.html',
@@ -93,21 +92,14 @@ def analytics():
     current_month_str = today.strftime('%Y-%m')
 
     # 1. KPI CARDS
-    # Fetch entries for this month
     current_month_entries = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == current_month_str).all()
 
-    # FIX: Use grand_total
     kpi_revenue = sum(e.grand_total for e in current_month_entries)
     kpi_parcels = sum(e.parcels for e in current_month_entries)
-
-    # Avoid division by zero
     kpi_avg_price = (kpi_revenue / kpi_parcels) if kpi_parcels > 0 else 0
-
-    # Active Vendors Count
     kpi_vendors_active = len(set(e.vendor_id for e in current_month_entries))
 
     # 2. REVENUE TREND (Last 6 Months)
-    # FIX: Use grand_total
     monthly_data = db.session.query(
         func.strftime('%Y-%m', Entry.date).label('month'),
         func.sum(Entry.grand_total).label('revenue')
@@ -121,7 +113,6 @@ def analytics():
             trend_data.append(d.revenue)
 
     # 3. VENDOR SHARE (Top 5)
-    # FIX: Join with Vendor table to get names
     vendor_share_query = db.session.query(
         Vendor.name,
         func.sum(Entry.grand_total).label('total_rev')
@@ -133,13 +124,11 @@ def analytics():
     pie_labels = [row[0] for row in vendor_share_query]
     pie_data = [row[1] for row in vendor_share_query]
 
-    # 4. TOP PARTS (Replaces Top Routes which didn't exist)
-    # Groups by 'part' (A, B, C...)
+    # 4. TOP DESTINATIONS (Using 'ship_to')
     top_routes = db.session.query(
-        Entry.part,
+        Entry.ship_to,
         func.count(Entry.id).label('count')
-    ).filter(Entry.part != None)\
-     .group_by(Entry.part)\
+    ).group_by(Entry.ship_to)\
      .order_by(func.count(Entry.id).desc())\
      .limit(5).all()
 
