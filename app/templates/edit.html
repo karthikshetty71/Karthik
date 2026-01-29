@@ -114,11 +114,18 @@
         const selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
 
         const ratePerParcel = parseFloat(selectedOption.getAttribute('data-rate')) || 0;
-        const transRate = parseFloat(selectedOption.getAttribute('data-trans')) || 0;
+        const flatTransport = parseFloat(selectedOption.getAttribute('data-trans')) || 0;
 
-        // Auto Calculate Values
-        const handling = parcels * ratePerParcel;
-        const transport = parcels * transRate; // Assuming standard logic
+        let handling = 0;
+        let transport = 0;
+
+        if (parcels > 0) {
+            // Logic Matches Quick Add:
+            // Handling = Rate * Parcels
+            // Transport = Flat Rate
+            handling = parcels * ratePerParcel;
+            transport = flatTransport;
+        }
 
         // Update Fields
         document.getElementById('handling').value = handling.toFixed(1);
