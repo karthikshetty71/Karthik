@@ -1,15 +1,5 @@
 {% extends "base.html" %}
 {% block content %}
-
-<style>
-    /* Forces the calendar icon to be white and clickable */
-    input[type="month"]::-webkit-calendar-picker-indicator {
-        filter: invert(1);
-        cursor: pointer;
-        opacity: 0.8;
-    }
-</style>
-
 <div class="glass rounded-2xl p-4 md:p-6 min-h-[75vh]">
 
     <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-8 gap-6">
@@ -41,18 +31,17 @@
             <form class="flex gap-2 bg-black/40 p-1 rounded-lg border border-gray-600 items-center justify-between w-full md:w-auto">
                 <input type="hidden" name="mode" value="{{ 'admin' if admin_mode else 'normal' }}">
 
-                <input type="month" name="month" value="{{ month }}"
-                       onchange="this.form.submit()"
-                       onclick="this.showPicker()"
-                       class="bg-transparent text-white px-2 outline-none text-xs [color-scheme:dark] flex-1 md:flex-none cursor-pointer">
+                <input type="month" name="month" value="{{ month }}" onchange="this.form.submit()" class="bg-transparent text-white px-2 outline-none text-xs [color-scheme:dark] flex-1 md:flex-none">
 
                 <div class="w-px bg-gray-600 h-4 mx-1"></div>
 
                 <div class="relative flex-1 md:flex-none">
                     <select name="vendor" onchange="this.form.submit()" class="w-full bg-transparent text-white pl-2 pr-6 outline-none text-xs appearance-none cursor-pointer">
+
                         {% if admin_mode %}
                         <option value="All" {% if vendor == 'All' %}selected{% endif %}>All Vendors</option>
                         {% endif %}
+
                         {% for v in vendors %}
                         <option value="{{ v.id }}" {% if vendor|string == v.id|string %}selected{% endif %}>{{ v.name }}</option>
                         {% endfor %}
@@ -78,9 +67,11 @@
                 {% endif %}
 
                 <th class="px-4 py-4 text-center whitespace-nowrap">Parcels</th>
+
                 <th class="px-4 py-4 text-right whitespace-nowrap">Handling</th>
                 <th class="px-4 py-4 text-right whitespace-nowrap">Rail</th>
                 <th class="px-4 py-4 text-right whitespace-nowrap">Trans</th>
+
                 <th class="px-4 py-4 text-right text-white whitespace-nowrap">Total</th>
                 <th class="px-4 py-4 text-center whitespace-nowrap">Action</th>
             </tr>
@@ -97,15 +88,21 @@
                 {% endif %}
 
                 <td class="px-4 py-3 text-center text-white font-bold">{{ entry.parcels }}</td>
+
                 <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(entry.handling_chg) }}</td>
                 <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(entry.railway_chg) }}</td>
                 <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(entry.transport_chg) }}</td>
+
                 <td class="px-4 py-3 text-right text-white font-bold tracking-wide">₹{{ "{:,.0f}".format(entry.grand_total) }}</td>
 
                 <td class="px-4 py-3 text-center">
                     <div class="flex justify-center gap-3">
-                        <a href="/edit/{{ entry.id }}" class="text-blue-500 hover:text-white text-xs font-bold uppercase transition">Edit</a>
-                        <a href="/entry/delete/{{ entry.id }}" onclick="return confirm('Delete this entry?')" class="text-red-500 hover:text-white text-xs font-bold uppercase transition">Delete</a>
+                        <a href="/edit/{{ entry.id }}" class="text-blue-500 hover:text-white text-xs font-bold uppercase transition">
+                            Edit
+                        </a>
+                        <a href="/entry/delete/{{ entry.id }}" onclick="return confirm('Delete this entry?')" class="text-red-500 hover:text-white text-xs font-bold uppercase transition">
+                            Delete
+                        </a>
                     </div>
                 </td>
             </tr>
