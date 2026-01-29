@@ -2,11 +2,26 @@ from flask import Blueprint, render_template, request, redirect, url_for, send_f
 from flask_login import login_required, current_user
 from app.models import Vendor, User, Entry, AuditLog
 from app.extensions import db
+from sqlalchemy import text
 import os
-import psutil # Requires: pip install psutil
+import psutil
 import platform
+from datetime import datetime
 
 admin_bp = Blueprint('admin', __name__)
+
+# --- HELPER: CALCULATE SYSTEM UPTIME ---
+def get_uptime():
+    try:
+        boot_time = datetime.fromtimestamp(psutil.boot_time())
+        now = datetime.now()
+        delta = now - boot_time
+        days = delta.days
+        hours, remainder = divmod(delta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{days}d {hours}h {minutes}m"
+    except:
+        return "Unknown"
 
 # --- MAIN SETTINGS PAGE ---
 @admin_bp.route('/settings', methods=['GET'])
@@ -25,12 +40,17 @@ def settings():
     # 3. System Metrics Defaults
     system_stats = {
         'cpu_percent': 0,
+        'cpu_cores': 0,
+        'cpu_freq': "0 GHz",
         'ram_percent': 0,
-        'ram_used': "0 GB",
-        'ram_total': "0 GB",
+        'ram_used': "0",
+        'ram_total': "0",
         'disk_percent': 0,
-        'disk_free': "0 GB",
-        'os_info': "Unknown"
+        'disk_free': "0",
+        'os_info': "Unknown",
+        'uptime': "0m",
+        'python_ver': platform.python_version(),
+        'app_memory': "0 MB" # RAM used specifically by KPS App
     }
 
     db_size = "Unknown"
@@ -46,20 +66,33 @@ def settings():
         try:
             # CPU
             system_stats['cpu_percent'] = psutil.cpu_percent(interval=0.1)
+            system_stats['cpu_cores'] = psutil.cpu_count(logical=True)
+            try:
+                # Some environments (like AWS EC2 t2/t3) don't report frequency
+                freq = psutil.cpu_freq()
+                system_stats['cpu_freq'] = f"{freq.current / 1000:.1f} GHz" if freq else "N/A"
+            except:
+                system_stats['cpu_freq'] = "N/A"
 
-            # RAM
+            # RAM (System)
             ram = psutil.virtual_memory()
             system_stats['ram_percent'] = ram.percent
             system_stats['ram_used'] = f"{ram.used / (1024**3):.1f} GB"
             system_stats['ram_total'] = f"{ram.total / (1024**3):.1f} GB"
+
+            # RAM (App Specific)
+            process = psutil.Process(os.getpid())
+            app_mem = process.memory_info().rss / (1024 * 1024) # Convert to MB
+            system_stats['app_memory'] = f"{app_mem:.0f} MB"
 
             # DISK
             disk = psutil.disk_usage('/')
             system_stats['disk_percent'] = disk.percent
             system_stats['disk_free'] = f"{disk.free / (1024**3):.1f} GB"
 
-            # OS Info
+            # OS & Uptime
             system_stats['os_info'] = f"{platform.system()} {platform.release()}"
+            system_stats['uptime'] = get_uptime()
 
             # Database File Size
             db_filename = 'logistics.db'
@@ -78,10 +111,29 @@ def settings():
     return render_template('settings.html',
                            vendors=vendors,
                            users=users,
-                           system_stats=system_stats, # Passing new metrics
+                           system_stats=system_stats,
                            db_size=db_size,
                            total_entries=total_entries,
                            audit_logs=audit_logs)
+
+# --- NEW: OPTIMIZE DATABASE (VACUUM) ---
+@admin_bp.route('/settings/optimize_db')
+@login_required
+def optimize_db():
+    if not current_user.is_admin:
+        return redirect(url_for('admin.settings'))
+
+    try:
+        # SQLite command to clean up unused space and defrag
+        db.session.execute(text("VACUUM"))
+        db.session.commit()
+
+        AuditLog.log(current_user, "SYSTEM", "Ran Database Optimization (VACUUM)")
+        flash("Database optimized successfully! (VACUUM completed)")
+    except Exception as e:
+        flash(f"Error optimizing: {e}")
+
+    return redirect(url_for('admin.settings'))
 
 # --- VENDOR ACTIONS ---
 @admin_bp.route('/settings/vendor/add', methods=['POST'])
