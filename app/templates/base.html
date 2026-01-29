@@ -30,13 +30,19 @@
                     <a href="/" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'core.home' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">ENTRY</a>
                     <a href="/view" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'core.view_data' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">DATA</a>
                     <a href="/invoices" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'reports.invoices' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">INVOICE</a>
+                    <a href="/analytics" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'reports.analytics' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">ANALYTICS</a>
                 </div>
 
                 {% if current_user.is_admin %}
-                <a href="/settings" class="text-gray-400 hover:text-white transition flex items-center gap-2 text-xs font-bold uppercase">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    Settings
-                </a>
+                <div class="flex items-center gap-3 border-l border-gray-700 pl-4">
+                    <a href="/users" class="text-gray-400 hover:text-white transition flex items-center gap-1 text-xs font-bold uppercase" title="Manage Users">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        Users
+                    </a>
+                    <a href="/settings" class="text-gray-400 hover:text-white transition flex items-center gap-1 text-xs font-bold uppercase" title="Settings">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </a>
+                </div>
                 {% endif %}
 
                 <a href="/logout" class="text-red-500 hover:text-red-400 text-xs font-bold border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500/10 transition">LOGOUT</a>
@@ -62,13 +68,22 @@
                 📊 View Data
             </a>
             <a href="/invoices" class="block px-3 py-3 rounded-md text-sm font-bold {{ 'bg-blue-600 text-white' if request.endpoint == 'reports.invoices' else 'text-gray-300 hover:bg-white/5' }}">
-                📄 Generate Invoice
+                📄 Invoice
+            </a>
+            <a href="/analytics" class="block px-3 py-3 rounded-md text-sm font-bold {{ 'bg-blue-600 text-white' if request.endpoint == 'reports.analytics' else 'text-gray-300 hover:bg-white/5' }}">
+                📈 Analytics
             </a>
 
             {% if current_user.is_admin %}
-            <a href="/settings" class="block px-3 py-3 rounded-md text-sm font-bold text-yellow-400 hover:bg-white/5 border-t border-gray-800 mt-2">
-                ⚙️ Settings & Users
-            </a>
+            <div class="border-t border-gray-800 mt-2 pt-2">
+                <p class="px-3 text-xs uppercase text-gray-500 font-bold mb-1">Admin Controls</p>
+                <a href="/users" class="block px-3 py-3 rounded-md text-sm font-bold text-gray-300 hover:bg-white/5">
+                    👥 Manage Users
+                </a>
+                <a href="/settings" class="block px-3 py-3 rounded-md text-sm font-bold text-gray-300 hover:bg-white/5">
+                    ⚙️ Vendor Settings
+                </a>
+            </div>
             {% endif %}
 
             <a href="/logout" class="block px-3 py-3 rounded-md text-sm font-bold text-red-500 hover:bg-red-500/10 mt-2">
