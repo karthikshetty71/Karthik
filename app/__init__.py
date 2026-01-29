@@ -7,8 +7,7 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'kps-secret-key-9988'
 
-    # --- FIX: POINT TO INSTANCE FOLDER ---
-    # This grabs the current working directory (~/Karthik) and points to instance/logistics.db
+    # --- CONFIG: Point Explicitly to 'instance/logistics.db' ---
     db_path = os.path.join(os.getcwd(), 'instance', 'logistics.db')
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -21,7 +20,7 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # Register Blueprints (Routes)
+    # Register Blueprints
     from app.routes.auth import auth_bp
     from app.routes.core import core_bp
     from app.routes.admin import admin_bp
@@ -35,22 +34,22 @@ def create_app():
     # Initialize DB Content
     with app.app_context():
         db.create_all()
-        # Create Default Admin
+        # Default Admin
         if not User.query.first():
-            admin = User(username='admin', is_admin=True)
+            admin = User(username='admin', is_admin=True, is_active=True)
             admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
-            print(" System: Default Admin Created (admin/admin123)")
+            print(" System: Default Admin Created")
 
-        # Create Default Vendors
+        # Default Vendors
         if not Vendor.query.first():
             db.session.add(Vendor(name="M/S Best Sellers"))
             db.session.add(Vendor(name="M/S Shiva Express"))
             db.session.add(Vendor(name="Manipal Technologies"))
             db.session.commit()
 
-    # --- LOGGING SIGNALS ---
+    # Logging Signals
     from flask_login import user_logged_in, user_logged_out
     from app.models import AuditLog
 
