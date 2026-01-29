@@ -37,14 +37,21 @@ def home():
 
             # 2. Get Inputs
             parcels = safe_int(request.form.get('parcels'))
-            handling = safe_float(request.form.get('handling'))
-            railway = safe_float(request.form.get('railway'))
-            transport = safe_float(request.form.get('transport'))
 
-            # 3. Calculate Total
+            # 3. Get Raw Charges
+            raw_handling = safe_float(request.form.get('handling'))
+            raw_railway = safe_float(request.form.get('railway'))
+            raw_transport = safe_float(request.form.get('transport'))
+
+            # 4. ENFORCE VENDOR SETTINGS (If column disabled -> Charge is 0)
+            handling = raw_handling if vendor_obj.show_handling else 0.0
+            railway = raw_railway if vendor_obj.show_railway else 0.0
+            transport = raw_transport if vendor_obj.show_transport else 0.0
+
+            # 5. Calculate Total
             grand_total = handling + railway + transport
 
-            # 4. Create Entry
+            # 6. Create Entry
             new_entry = Entry(
                 date=datetime.strptime(request.form['date'], '%Y-%m-%d'),
                 vendor_id=vendor_obj.id,
@@ -80,31 +87,23 @@ def home():
                            today_rev=today_rev,
                            today_parcels=today_parcels)
 
-# --- 2. VIEW DATA (Modified for Modes) ---
+# --- 2. VIEW DATA ---
 @core_bp.route('/view', methods=['GET'])
 @login_required
 def view_data():
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
     vendor_id = request.args.get('vendor')
-    mode = request.args.get('mode', 'normal') # Default to normal
+    mode = request.args.get('mode', 'normal')
 
-    # Determine if Admin Mode is active
     admin_mode = (mode == 'admin' and current_user.is_admin)
 
-    # --- DEFAULT SELECTION LOGIC ---
     if not vendor_id:
         if admin_mode:
-            # In Admin Mode, default to 'All'
             vendor_id = 'All'
         else:
-            # In Normal Mode, find the Default Vendor
             default_vendor = Vendor.query.filter_by(is_default=True).first()
-            if default_vendor:
-                vendor_id = str(default_vendor.id)
-            else:
-                vendor_id = 'All' # Fallback
+            vendor_id = str(default_vendor.id) if default_vendor else 'All'
 
-    # Build Query
     query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
 
     if vendor_id and vendor_id != 'All':
@@ -128,9 +127,7 @@ def delete_entry(id):
     db.session.delete(entry)
     db.session.commit()
     flash('Entry Deleted')
-
     if request.referrer and 'view' in request.referrer:
-        # Preserve the mode if possible, but simplest is to go back to view
         return redirect(request.referrer)
     return redirect(url_for('core.home'))
 
@@ -139,14 +136,11 @@ def delete_entry(id):
 @login_required
 def admin_view():
     if not current_user.is_admin:
-        flash("Admins only.")
         return redirect(url_for('core.home'))
-
-    # Redirect to view with mode=admin
     today = datetime.today().strftime('%Y-%m')
     return redirect(url_for('core.view_data', month=today, mode='admin', vendor='All'))
 
-# --- 5. EDIT ENTRY ROUTE (FIXED) ---
+# --- 5. EDIT ENTRY (Enforce Logic Here Too) ---
 @core_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_entry(id):
@@ -155,22 +149,27 @@ def edit_entry(id):
 
     if request.method == 'POST':
         try:
-             # 1. Update Basic Info
+             # Get Vendor Object to check flags
+             v_id = int(request.form['vendor'])
+             vendor_obj = Vendor.query.get(v_id)
+
              entry.date = datetime.strptime(request.form['date'], '%Y-%m-%d')
-             entry.vendor_id = int(request.form['vendor'])
+             entry.vendor_id = v_id
              entry.rr_no = request.form.get('rr_no')
              entry.ship_from = request.form.get('from')
              entry.ship_to = request.form.get('to')
-
-             # 2. Update Parcels
              entry.parcels = safe_int(request.form.get('parcels'))
 
-             # 3. Update Charges (THIS WAS MISSING BEFORE)
-             entry.handling_chg = safe_float(request.form.get('handling'))
-             entry.railway_chg = safe_float(request.form.get('railway'))
-             entry.transport_chg = safe_float(request.form.get('transport'))
+             # --- ENFORCE FLAGS ---
+             raw_handling = safe_float(request.form.get('handling'))
+             raw_railway = safe_float(request.form.get('railway'))
+             raw_transport = safe_float(request.form.get('transport'))
 
-             # 4. Recalculate Grand Total
+             entry.handling_chg = raw_handling if vendor_obj.show_handling else 0.0
+             entry.railway_chg = raw_railway if vendor_obj.show_railway else 0.0
+             entry.transport_chg = raw_transport if vendor_obj.show_transport else 0.0
+
+             # Recalculate Total
              entry.grand_total = entry.handling_chg + entry.railway_chg + entry.transport_chg
 
              db.session.commit()

@@ -52,6 +52,9 @@
                             <option value="{{ v.name }}"
                                     data-rate="{{ v.rate_per_parcel }}"
                                     data-transport="{{ v.transport_rate }}"
+                                    data-flag-rail="{{ '1' if v.show_railway else '0' }}"
+                                    data-flag-handle="{{ '1' if v.show_handling else '0' }}"
+                                    data-flag-trans="{{ '1' if v.show_transport else '0' }}"
                                     {% if v.is_default %}selected{% endif %}>
                                 {{ v.name }}
                             </option>
@@ -90,15 +93,15 @@
             <div class="pt-6 border-t border-gray-700 space-y-3">
                 <p class="text-xs uppercase tracking-wider text-gray-400">Charges Breakdown</p>
                 <div class="grid grid-cols-3 gap-2">
-                    <div class="relative group">
+                    <div class="relative group" id="div_handling">
                         <input type="number" step="0.01" name="handling" id="handlingInput" class="w-full bg-black/40 border border-gray-700 rounded p-2 md:p-3 text-right text-white focus:border-blue-500 outline-none font-mono text-sm md:text-base" placeholder="0">
                         <span class="absolute left-2 top-2 md:left-3 md:top-3 text-[9px] md:text-[10px] text-gray-500 font-bold">HNDL</span>
                     </div>
-                    <div class="relative group">
-                        <input type="number" step="0.01" name="railway" class="w-full bg-black/40 border border-gray-700 rounded p-2 md:p-3 text-right text-white focus:border-blue-500 outline-none font-mono text-sm md:text-base" placeholder="0">
+                    <div class="relative group" id="div_railway">
+                        <input type="number" step="0.01" name="railway" id="railwayInput" class="w-full bg-black/40 border border-gray-700 rounded p-2 md:p-3 text-right text-white focus:border-blue-500 outline-none font-mono text-sm md:text-base" placeholder="0">
                         <span class="absolute left-2 top-2 md:left-3 md:top-3 text-[9px] md:text-[10px] text-gray-500 font-bold">RAIL</span>
                     </div>
-                    <div class="relative group">
+                    <div class="relative group" id="div_transport">
                         <input type="number" step="0.01" name="transport" id="transportInput" class="w-full bg-black/40 border border-gray-700 rounded p-2 md:p-3 text-right text-white focus:border-blue-500 outline-none font-mono text-sm md:text-base" placeholder="0">
                         <span class="absolute left-2 top-2 md:left-3 md:top-3 text-[9px] md:text-[10px] text-gray-500 font-bold">TRNS</span>
                     </div>
@@ -113,7 +116,6 @@
 </div>
 
 <script>
-    // --- TYPEWRITER EFFECT ---
     const textLines = ["kps.admin ~/logistics", "$ init system...", "> Loading Rate Cards... [OK]", "> Auto-Calculation Engine... [ONLINE]", "> User: {{ current_user.username }}", "$ ready_"];
     const element = document.getElementById('typewriter');
     let lineIndex = 0, charIndex = 0;
@@ -132,33 +134,53 @@
         }
     }
 
-    // --- CALCULATION LOGIC ---
     function calculateCharges() {
         const parcels = parseFloat(document.getElementById('parcelsInput').value) || 0;
         const vendorSelect = document.getElementById('vendorSelect');
         const selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
 
-        // Fetch rates from data attributes
+        // Rates
         const ratePerParcel = parseFloat(selectedOption.getAttribute('data-rate')) || 0;
         const flatTransport = parseFloat(selectedOption.getAttribute('data-transport')) || 0;
+
+        // Flags
+        const showRail = selectedOption.getAttribute('data-flag-rail') === '1';
+        const showHandle = selectedOption.getAttribute('data-flag-handle') === '1';
+        const showTrans = selectedOption.getAttribute('data-flag-trans') === '1';
+
+        // Visibility
+        toggleField('div_railway', 'railwayInput', showRail);
+        toggleField('div_handling', 'handlingInput', showHandle);
+        toggleField('div_transport', 'transportInput', showTrans);
 
         let handling = 0;
         let transport = 0;
 
-        // Apply Logic: Handling is Multiplied, Transport is Flat
         if (parcels > 0) {
-            handling = parcels * ratePerParcel;
-            transport = flatTransport;
+            if (showHandle) handling = parcels * ratePerParcel;
+            if (showTrans) transport = flatTransport;
         }
 
-        document.getElementById('handlingInput').value = handling;
-        document.getElementById('transportInput').value = transport;
+        if (showHandle) document.getElementById('handlingInput').value = handling;
+        if (showTrans) document.getElementById('transportInput').value = transport;
     }
 
-    // Run on load
+    function toggleField(divId, inputId, isVisible) {
+        const div = document.getElementById(divId);
+        const input = document.getElementById(inputId);
+        if (isVisible) {
+            div.style.opacity = '1';
+            input.readOnly = false;
+        } else {
+            div.style.opacity = '0.3';
+            input.value = 0;
+            input.readOnly = true;
+        }
+    }
+
     window.onload = function() {
         typeWriter();
-        calculateCharges(); // Sets initial values based on default vendor
+        calculateCharges();
     };
 </script>
 {% endblock %}
