@@ -6,6 +6,23 @@ import os
 
 admin_bp = Blueprint('admin', __name__)
 
+@admin_bp.route('/set_default_vendor/<int:id>')
+@login_required
+def set_default_vendor(id):
+    if not current_user.is_admin:
+        return redirect(url_for('core.home'))
+
+    # 1. Reset all vendors to False
+    Vendor.query.update({Vendor.is_default: False})
+
+    # 2. Set selected vendor to True
+    vendor = Vendor.query.get_or_404(id)
+    vendor.is_default = True
+
+    db.session.commit()
+    flash(f"Default vendor set to: {vendor.name}")
+    return redirect(url_for('admin.settings'))
+
 # --- SETTINGS & VENDOR MANAGEMENT ---
 @admin_bp.route('/settings', methods=['GET', 'POST'])
 @login_required

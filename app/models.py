@@ -20,6 +20,7 @@ class Vendor(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
     rate_per_parcel = db.Column(db.Float, default=70.0) # Handling Rate
     transport_rate = db.Column(db.Float, default=0.0)   # NEW: Transport Flat Rate
+    is_default = db.Column(db.Boolean, default=False)
 
 class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
