@@ -248,7 +248,7 @@
 
         <div class="glass p-6 rounded-2xl border border-white/5 mb-6">
             <h3 class="text-lg font-bold text-white mb-6 flex justify-between items-center">
-                <span>Server Resources  </span>
+                <span>Server Resources</span>
                 <span class="text-xs bg-green-500/10 text-green-400 px-2 py-1 rounded border border-green-500/20 animate-pulse">● Live Monitor</span>
             </h3>
 
@@ -351,6 +351,19 @@
                             </div>
                         </div>
                         <span class="text-purple-400 text-sm font-bold">Run Now</span>
+                    </a>
+
+                    <a href="/settings/clear_logs" onclick="return confirm('Are you sure? This will permanently delete audit logs older than 7 days.')" class="flex items-center justify-between bg-red-600/10 border border-red-500/30 p-4 rounded-xl hover:bg-red-600/20 transition group">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-red-500/20 p-2 rounded-lg text-red-400 group-hover:text-white transition">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-white font-bold text-sm">Clear Old Logs</p>
+                                <p class="text-red-200/60 text-xs">Delete history > 7 days</p>
+                            </div>
+                        </div>
+                        <span class="text-red-400 text-sm font-bold">Cleanup</span>
                     </a>
 
                 </div>

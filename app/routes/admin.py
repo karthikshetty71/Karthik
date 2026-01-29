@@ -6,7 +6,7 @@ from sqlalchemy import text
 import os
 import psutil
 import platform
-from datetime import datetime
+from datetime import datetime, timedelta
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -132,6 +132,30 @@ def optimize_db():
         flash("Database optimized successfully! (VACUUM completed)")
     except Exception as e:
         flash(f"Error optimizing: {e}")
+
+    return redirect(url_for('admin.settings'))
+
+# --- NEW: CLEAR OLD LOGS ---
+@admin_bp.route('/settings/clear_logs')
+@login_required
+def clear_logs():
+    if not current_user.is_admin:
+        return redirect(url_for('admin.settings'))
+
+    try:
+        # Calculate date 7 days ago
+        cutoff_date = datetime.now() - timedelta(days=7)
+
+        # Delete logs older than cutoff
+        deleted_count = AuditLog.query.filter(AuditLog.timestamp < cutoff_date).delete()
+        db.session.commit()
+
+        # Log the action (this new log is fresh, so it won't be deleted)
+        AuditLog.log(current_user, "SYSTEM", f"Manually cleared {deleted_count} logs older than 7 days")
+        flash(f"Success! Cleared {deleted_count} old log entries.")
+
+    except Exception as e:
+        flash(f"Error clearing logs: {e}")
 
     return redirect(url_for('admin.settings'))
 
