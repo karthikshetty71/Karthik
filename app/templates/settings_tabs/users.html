@@ -22,41 +22,71 @@
     </div>
 
     <div class="md:col-span-2 glass p-6 rounded-2xl">
-        <h3 class="text-lg font-bold text-white mb-4">Active Users</h3>
+        <h3 class="text-lg font-bold text-white mb-4">User Management</h3>
         <div class="overflow-hidden rounded-lg border border-white/10">
             <table class="w-full text-left text-sm text-gray-400">
                 <thead class="bg-black/40 text-gray-500 font-bold text-xs uppercase">
                 <tr>
                     <th class="p-3">User</th>
-                    <th class="p-3 text-center">Role / Action</th>
+                    <th class="p-3 text-center">Permissions & Access</th>
                     <th class="p-3 text-right">Delete</th>
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-800 bg-black/10">
                 {% for u in users %}
-                <tr class="hover:bg-white/5 transition">
-                    <td class="p-3 text-white font-bold align-middle">{{ u.username }}</td>
+                <tr class="hover:bg-white/5 transition {% if not u.is_active %}opacity-60{% endif %}">
+
+                    <td class="p-3 align-middle">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-white text-sm">{{ u.username }}</span>
+                            {% if not u.is_active %}
+                            <span class="text-[10px] text-red-400 font-mono mt-0.5">● ACCESS DISABLED</span>
+                            {% else %}
+                            <span class="text-[10px] text-green-500/60 font-mono mt-0.5">● Active</span>
+                            {% endif %}
+                        </div>
+                    </td>
 
                     <td class="p-3 text-center align-middle">
                         {% if u.id == current_user.id %}
                         <span class="bg-purple-500 text-white px-3 py-1 rounded text-xs font-bold shadow-lg shadow-purple-500/30">ADMIN (You)</span>
                         {% else %}
-                        <a href="/settings/user/toggle_admin/{{ u.id }}"
-                           class="px-3 py-1 rounded text-xs font-bold border transition block w-24 mx-auto text-center
-                                   {% if u.is_admin %}
-                                     bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500 hover:text-white
-                                   {% else %}
-                                     bg-gray-700/50 text-gray-400 border-gray-600 hover:bg-gray-600 hover:text-white
-                                   {% endif %}">
-                            {{ 'ADMIN' if u.is_admin else 'STAFF' }}
-                        </a>
+                        <div class="flex items-center justify-center gap-3">
+
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[9px] uppercase text-gray-600 font-bold">Role</span>
+                                <a href="/settings/user/toggle_admin/{{ u.id }}"
+                                   class="w-20 py-1 rounded text-[10px] font-bold border transition text-center
+                                           {% if u.is_admin %}
+                                             bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500 hover:text-white
+                                           {% else %}
+                                             bg-gray-700/50 text-gray-400 border-gray-600 hover:bg-gray-600 hover:text-white
+                                           {% endif %}">
+                                    {{ 'ADMIN' if u.is_admin else 'STAFF' }}
+                                </a>
+                            </div>
+
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[9px] uppercase text-gray-600 font-bold">Status</span>
+                                <a href="/settings/user/toggle_active/{{ u.id }}"
+                                   class="w-20 py-1 rounded text-[10px] font-bold border transition text-center
+                                           {% if u.is_active %}
+                                             bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500 hover:text-white
+                                           {% else %}
+                                             bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500 hover:text-white
+                                           {% endif %}">
+                                    {{ 'ENABLED' if u.is_active else 'DISABLED' }}
+                                </a>
+                            </div>
+
+                        </div>
                         {% endif %}
                     </td>
 
                     <td class="p-3 text-right align-middle">
                         {% if u.id != current_user.id %}
-                        <a href="/settings/user/delete/{{ u.id }}" class="text-red-500 hover:text-white text-xs font-bold border border-red-500/30 px-2 py-1 rounded hover:bg-red-600 transition" onclick="return confirm('Revoke access for {{ u.username }}?')">
-                            REVOKE
+                        <a href="/settings/user/delete/{{ u.id }}" class="text-gray-600 hover:text-red-500 text-xs font-bold px-2 py-1 transition border border-transparent hover:border-red-500/30 rounded" onclick="return confirm('Permanently delete {{ u.username }}?')">
+                            🗑️
                         </a>
                         {% else %}
                         <span class="text-gray-600 text-[10px] italic">Locked</span>
@@ -67,6 +97,8 @@
                 </tbody>
             </table>
         </div>
-        <p class="text-xs text-gray-500 mt-4 text-center">Click the Role button (ADMIN/STAFF) to toggle permissions.</p>
+        <p class="text-xs text-gray-500 mt-4 text-center">
+            Use <b>Role</b> to change permissions. Use <b>Status</b> to temporarily ban access.
+        </p>
     </div>
 </div>

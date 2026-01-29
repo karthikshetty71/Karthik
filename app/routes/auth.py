@@ -7,14 +7,28 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    # If already logged in, send to home
+    if current_user.is_authenticated:
+        return redirect(url_for('core.home'))
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
         user = User.query.filter_by(username=username).first()
+
         if user and user.check_password(password):
+            # --- SECURITY CHECK: IS ACCOUNT ACTIVE? ---
+            if not user.is_active:
+                flash('Your account has been disabled. Please contact the Admin.')
+                return redirect(url_for('auth.login'))
+            # ------------------------------------------
+
             login_user(user)
             return redirect(url_for('core.home'))
+
         flash('Invalid Credentials')
+
     return render_template('login.html')
 
 @auth_bp.route('/logout')
@@ -22,32 +36,3 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('auth.login'))
-
-@auth_bp.route('/admin/users', methods=['GET', 'POST'])
-@login_required
-def admin_users():
-    if not current_user.is_admin:
-        return redirect(url_for('core.home'))
-        
-    if request.method == 'POST':
-        username = request.form['username']
-        if User.query.filter_by(username=username).first():
-            flash('User exists')
-        else:
-            new_user = User(username=username, is_admin='is_admin' in request.form)
-            new_user.set_password(request.form['password'])
-            db.session.add(new_user)
-            db.session.commit()
-            
-    users = User.query.all()
-    return render_template('admin_users.html', users=users)
-
-@auth_bp.route('/admin/delete_user/<int:id>')
-@login_required
-def delete_user(id):
-    if not current_user.is_admin or current_user.id == id:
-        return redirect(url_for('auth.admin_users'))
-    user = User.query.get_or_404(id)
-    db.session.delete(user)
-    db.session.commit()
-    return redirect(url_for('auth.admin_users'))

@@ -4,6 +4,7 @@ from app.models import User, AuditLog
 from app.extensions import db
 from . import admin_bp
 
+# --- ADD NEW USER ---
 @admin_bp.route('/settings/user/add', methods=['POST'])
 @login_required
 def add_user():
@@ -19,7 +20,8 @@ def add_user():
         if User.query.filter_by(username=username).first():
             flash('User already exists')
         else:
-            new_user = User(username=username, is_admin=is_admin)
+            # New users are Active by default (is_active=True)
+            new_user = User(username=username, is_admin=is_admin, is_active=True)
             new_user.set_password(password)
             db.session.add(new_user)
             db.session.commit()
@@ -30,6 +32,7 @@ def add_user():
 
     return redirect(url_for('admin.settings'))
 
+# --- TOGGLE ADMIN ROLE ---
 @admin_bp.route('/settings/user/toggle_admin/<int:id>')
 @login_required
 def toggle_admin(id):
@@ -52,6 +55,32 @@ def toggle_admin(id):
 
     return redirect(url_for('admin.settings'))
 
+# --- TOGGLE ACTIVE STATUS (ENABLE/DISABLE) ---
+@admin_bp.route('/settings/user/toggle_active/<int:id>')
+@login_required
+def toggle_active(id):
+    if not current_user.is_admin:
+        return redirect(url_for('admin.settings'))
+
+    if current_user.id == id:
+        flash("You cannot disable yourself!")
+        return redirect(url_for('admin.settings'))
+
+    user = User.query.get_or_404(id)
+
+    # Flip the Active status
+    user.is_active = not user.is_active
+    db.session.commit()
+
+    status = "ENABLED" if user.is_active else "DISABLED"
+
+    # Log it
+    AuditLog.log(current_user, "UPDATE USER", f"{status} user access for {user.username}")
+    flash(f"User {user.username} is now {status}")
+
+    return redirect(url_for('admin.settings'))
+
+# --- DELETE USER ---
 @admin_bp.route('/settings/user/delete/<int:id>')
 @login_required
 def delete_user(id):
