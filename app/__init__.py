@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from app.extensions import db, login_manager
 from app.models import User, Vendor
@@ -5,7 +6,11 @@ from app.models import User, Vendor
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'kps-secret-key-9988'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///logistics.db'
+
+    # --- FIX: POINT TO INSTANCE FOLDER ---
+    # This grabs the current working directory (~/Karthik) and points to instance/logistics.db
+    db_path = os.path.join(os.getcwd(), 'instance', 'logistics.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Initialize Extensions
@@ -45,7 +50,7 @@ def create_app():
             db.session.add(Vendor(name="Manipal Technologies"))
             db.session.commit()
 
-    # --- LOGGING SIGNALS (Fixed Indentation) ---
+    # --- LOGGING SIGNALS ---
     from flask_login import user_logged_in, user_logged_out
     from app.models import AuditLog
 
