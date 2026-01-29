@@ -1,28 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-md mx-auto mt-20 text-center">
-    <div class="glass p-8 rounded-2xl">
-        <div class="bg-white/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-white border border-white/20">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+<div class="max-w-md mx-auto mt-16">
+    <div class="glass p-8 rounded-2xl border-2 border-green-500/20 text-center">
+
+        <div class="mb-6">
+            <h2 class="text-3xl font-bold text-white mb-2">Generate Invoice</h2>
+            <p class="text-gray-400 text-xs">Select month and vendor to create bill.</p>
         </div>
-        
-        <h2 class="text-2xl font-bold mb-2 text-white">Generate Invoice</h2>
-        <p class="text-gray-400 mb-8">Select criteria to create PDF.</p>
 
-        <form action="/generate_bill" method="GET" target="_blank" class="space-y-4">
-            <input type="month" name="month" value="{{ today }}" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-center text-white [color-scheme:dark]">
-            
-            <select name="vendor" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
-                <option value="All">All Vendors (Consolidated)</option>
-                {% for v in vendors %}
-                <option value="{{ v.name }}">{{ v.name }}</option>
-                {% endfor %}
-            </select>
+        <form action="/generate_bill" method="GET" class="space-y-4">
 
-            <button type="submit" class="w-full bg-white text-black font-bold py-3 rounded hover:bg-gray-200 transition mt-4">
+            <div class="text-left">
+                <label class="text-xs uppercase text-gray-500 font-bold ml-1">Billing Month</label>
+                <input type="month" name="month" value="{{ today }}" required
+                       class="w-full bg-black/40 border border-gray-600 rounded-lg p-2 text-white outline-none focus:border-green-500 transition [color-scheme:dark]">
+            </div>
+
+            <div class="text-left relative">
+                <label class="text-xs uppercase text-gray-500 font-bold ml-1">Vendor</label>
+                <div class="relative">
+                    <select name="vendor" required
+                            class="w-full bg-black/40 border border-gray-600 rounded-lg p-2 text-white outline-none focus:border-green-500 appearance-none transition cursor-pointer">
+                        {% for v in vendors %}
+                        <option value="{{ v.name }}">{{ v.name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-900/50 mt-4 transition transform active:scale-95 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 GENERATE BILL
             </button>
         </form>
+
     </div>
 </div>
 {% endblock %}
