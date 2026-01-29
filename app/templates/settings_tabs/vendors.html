@@ -34,7 +34,12 @@
             <tbody class="divide-y divide-gray-800 bg-black/10">
             {% for v in vendors %}
             <tr class="hover:bg-white/5 transition align-top">
+
                 <td class="p-3">
+                    {% if current_user.is_admin %}
+                    <form id="form-{{v.id}}" action="/settings/vendor/update/{{ v.id }}" method="POST"></form>
+                    {% endif %}
+
                     <div class="flex items-center gap-2 mt-2">
                         {% if current_user.is_admin %}
                         <a href="/settings/vendor/default/{{ v.id }}" class="text-lg {{ 'text-yellow-400' if v.is_default else 'text-gray-700 hover:text-yellow-400' }}">★</a>
@@ -45,34 +50,45 @@
                 </td>
 
                 {% if current_user.is_admin %}
-                <form action="/settings/vendor/update/{{ v.id }}" method="POST">
-                    <td class="p-3 space-y-2">
-                        <textarea name="billing_name" placeholder="Billing Name" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs h-8 focus:border-blue-500 outline-none">{{ v.billing_name or '' }}</textarea>
-                        <textarea name="billing_address" placeholder="Address" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs h-8 focus:border-blue-500 outline-none">{{ v.billing_address or '' }}</textarea>
-                    </td>
-                    <td class="p-3">
-                        <div class="grid grid-cols-2 gap-x-2 gap-y-1 bg-black/20 p-2 rounded border border-gray-800 w-32">
-                            <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer"><input type="checkbox" name="show_rr" {% if v.show_rr %}checked{% endif %} class="accent-green-500"> RR</label>
-                            <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer"><input type="checkbox" name="show_handling" {% if v.show_handling %}checked{% endif %} class="accent-green-500"> Hndl</label>
-                            <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer"><input type="checkbox" name="show_railway" {% if v.show_railway %}checked{% endif %} class="accent-green-500"> Rail</label>
-                            <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer"><input type="checkbox" name="show_transport" {% if v.show_transport %}checked{% endif %} class="accent-green-500"> Trns</label>
-                        </div>
-                    </td>
-                    <td class="p-3 text-center space-y-2">
-                        <input type="number" step="0.1" name="rate" value="{{ v.rate_per_parcel }}" class="w-16 bg-transparent border-b border-gray-700 text-green-400 text-center text-xs">
-                        <input type="number" step="0.1" name="transport" value="{{ v.transport_rate }}" class="w-16 bg-transparent border-b border-gray-700 text-blue-400 text-center text-xs">
-                    </td>
-                    <td class="p-3 text-center align-middle">
-                        <div class="flex items-center justify-center gap-1">
-                            <span class="text-gray-500 text-xs">₹</span>
-                            <input type="number" step="0.1" name="pending_balance" value="{{ v.pending_balance }}" class="w-20 bg-red-900/20 border border-red-500/30 rounded p-1 text-red-300 text-center text-sm font-bold focus:border-red-500 outline-none">
-                        </div>
-                    </td>
-                    <td class="p-3 text-right pt-6 whitespace-nowrap">
-                        <button type="submit" class="text-blue-400 hover:text-white text-xs font-bold mr-2 border border-blue-500/30 px-2 py-1 rounded">SAVE</button>
-                        <a href="/settings/vendor/delete/{{ v.id }}" class="text-red-500 hover:text-white text-xs font-bold border border-red-500/30 px-2 py-1 rounded" onclick="return confirm('Delete {{ v.name }}?')">DEL</a>
-                    </td>
-                </form>
+                <td class="p-3 space-y-2">
+                    <textarea form="form-{{v.id}}" name="billing_name" placeholder="Billing Name" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs h-8 focus:border-blue-500 outline-none">{{ v.billing_name or '' }}</textarea>
+                    <textarea form="form-{{v.id}}" name="billing_address" placeholder="Address" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs h-8 focus:border-blue-500 outline-none">{{ v.billing_address or '' }}</textarea>
+                </td>
+
+                <td class="p-3">
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-1 bg-black/20 p-2 rounded border border-gray-800 w-32">
+                        <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer">
+                            <input form="form-{{v.id}}" type="checkbox" name="show_rr" {% if v.show_rr %}checked{% endif %} class="accent-green-500"> RR
+                        </label>
+                        <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer">
+                            <input form="form-{{v.id}}" type="checkbox" name="show_handling" {% if v.show_handling %}checked{% endif %} class="accent-green-500"> Hndl
+                        </label>
+                        <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer">
+                            <input form="form-{{v.id}}" type="checkbox" name="show_railway" {% if v.show_railway %}checked{% endif %} class="accent-green-500"> Rail
+                        </label>
+                        <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer">
+                            <input form="form-{{v.id}}" type="checkbox" name="show_transport" {% if v.show_transport %}checked{% endif %} class="accent-green-500"> Trns
+                        </label>
+                    </div>
+                </td>
+
+                <td class="p-3 text-center space-y-2">
+                    <input form="form-{{v.id}}" type="number" step="0.1" name="rate" value="{{ v.rate_per_parcel }}" class="w-16 bg-transparent border-b border-gray-700 text-green-400 text-center text-xs">
+                    <input form="form-{{v.id}}" type="number" step="0.1" name="transport" value="{{ v.transport_rate }}" class="w-16 bg-transparent border-b border-gray-700 text-blue-400 text-center text-xs">
+                </td>
+
+                <td class="p-3 text-center align-middle">
+                    <div class="flex items-center justify-center gap-1">
+                        <span class="text-gray-500 text-xs">₹</span>
+                        <input form="form-{{v.id}}" type="number" step="0.1" name="pending_balance" value="{{ v.pending_balance }}" class="w-20 bg-red-900/20 border border-red-500/30 rounded p-1 text-red-300 text-center text-sm font-bold focus:border-red-500 outline-none">
+                    </div>
+                </td>
+
+                <td class="p-3 text-right pt-6 whitespace-nowrap">
+                    <button form="form-{{v.id}}" type="submit" class="text-blue-400 hover:text-white text-xs font-bold mr-2 border border-blue-500/30 px-2 py-1 rounded">SAVE</button>
+                    <a href="/settings/vendor/delete/{{ v.id }}" class="text-red-500 hover:text-white text-xs font-bold border border-red-500/30 px-2 py-1 rounded" onclick="return confirm('Delete {{ v.name }}?')">DEL</a>
+                </td>
+
                 {% else %}
                 <td class="p-3 text-xs text-gray-400">
                     <div class="font-bold text-gray-300">{{ v.billing_name or '-' }}</div>
