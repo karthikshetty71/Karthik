@@ -18,6 +18,8 @@ class User(UserMixin, db.Model):
 class Vendor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
+    billing_name = db.Column(db.String(150))    # Name on PDF
+    billing_address = db.Column(db.String(255)) # Address on PDF
     rate_per_parcel = db.Column(db.Float, default=70.0) # Handling Rate
     transport_rate = db.Column(db.Float, default=0.0)   # NEW: Transport Flat Rate
     is_default = db.Column(db.Boolean, default=False)
