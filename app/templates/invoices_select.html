@@ -1,51 +1,55 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-md mx-auto mt-10 px-4">
-    <div class="glass p-8 rounded-2xl border border-white/5">
+<div class="max-w-md mx-auto mt-20 px-4">
 
-        <div class="text-center mb-8">
-            <h2 class="text-2xl font-bold text-white tracking-tight">Generate Invoice</h2>
-            <p class="text-gray-400 text-sm mt-1">Select month and vendor to proceed</p>
-        </div>
+    <style>
+        input[type="month"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+            opacity: 0.8;
+        }
+    </style>
 
-        <form action="/generate_bill" method="GET" class="space-y-5">
+    <div class="glass p-8 rounded-2xl border border-white/10 text-center relative overflow-hidden">
 
-            <div>
-                <label class="block text-xs uppercase font-bold text-gray-500 mb-2">Select Month</label>
-                <input type="month" name="month" value="{{ today }}" required
-                       class="w-full bg-black/40 border border-gray-700 rounded-lg p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl"></div>
+
+        <h2 class="text-2xl font-bold text-white mb-2">Generate Invoice</h2>
+        <p class="text-sm text-gray-400 mb-8">Select a month and vendor to proceed</p>
+
+        <form action="/generate_bill" method="GET" class="space-y-6 relative z-10">
+
+            <div class="text-left space-y-2">
+                <label class="text-xs uppercase font-bold text-blue-400 tracking-wider ml-1">Billing Month</label>
+                <input type="month" name="month" value="{{ today }}" required onclick="this.showPicker()"
+                       class="w-full bg-black/40 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-blue-500 cursor-pointer transition">
             </div>
 
-            <div>
-                <label class="block text-xs uppercase font-bold text-gray-500 mb-2">Select Vendor</label>
+            <div class="text-left space-y-2">
+                <label class="text-xs uppercase font-bold text-purple-400 tracking-wider ml-1">Select Vendor</label>
                 <div class="relative">
                     <select name="vendor" required
-                            class="w-full bg-black/40 border border-gray-700 rounded-lg p-3 text-white appearance-none focus:border-blue-500 outline-none transition cursor-pointer">
+                            class="w-full bg-black/40 border border-gray-700 rounded-lg p-3 text-white appearance-none outline-none focus:border-purple-500 cursor-pointer">
                         <option value="" disabled selected>-- Choose Vendor --</option>
                         {% for v in vendors %}
-                        <option value="{{ v.id }}" {% if v.is_default %}selected{% endif %}>{{ v.name }}</option>
+                        <option value="{{ v.id }}">{{ v.name }}</option>
                         {% endfor %}
                     </select>
-                    <div class="absolute right-4 top-4 pointer-events-none">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-black/20 p-4 rounded-lg border border-white/5 flex items-center justify-center gap-3">
-                <input type="checkbox" name="include_pending" id="include_pending" checked
-                       class="w-5 h-5 accent-red-500 rounded cursor-pointer">
-                <label for="include_pending" class="text-sm text-gray-300 font-bold cursor-pointer select-none">
-                    Include Pending Balance?
-                </label>
+            <div class="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/10">
+                <input type="checkbox" name="include_pending" id="pend" class="w-4 h-4 accent-green-500 cursor-pointer">
+                <label for="pend" class="text-xs text-gray-300 cursor-pointer select-none">Include Pending Balance?</label>
             </div>
 
-            <button type="submit"
-                    class="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold py-3.5 rounded-lg hover:from-blue-500 hover:to-blue-400 transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                GENERATE PDF
+            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-[1.02] text-sm tracking-widest uppercase">
+                Generate PDF >
             </button>
-
         </form>
     </div>
 </div>
