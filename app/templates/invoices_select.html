@@ -22,7 +22,9 @@
                     <select name="vendor" required
                             class="w-full h-12 bg-black/40 border border-gray-600 rounded-lg px-4 text-white outline-none focus:border-green-500 appearance-none transition cursor-pointer">
                         {% for v in vendors %}
-                        <option value="{{ v.name }}">{{ v.name }}</option>
+                        <option value="{{ v.name }}" {% if v.is_default %}selected{% endif %}>
+                            {{ v.name }}
+                        </option>
                         {% endfor %}
                     </select>
 

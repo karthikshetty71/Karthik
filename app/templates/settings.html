@@ -1,57 +1,105 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-4xl mx-auto mt-10">
-    <div class="glass p-8 rounded-2xl">
-        <h2 class="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">Vendor Rate Cards</h2>
+<div class="max-w-5xl mx-auto mt-6 md:mt-10 px-4">
+    <div class="glass p-6 md:p-8 rounded-2xl min-h-[80vh]">
 
-        <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 border-b border-gray-700 pb-8">
-            <input type="text" name="vendor_name" placeholder="Vendor Name" required class="bg-black/40 border border-gray-700 rounded p-3 text-white">
+        <div class="mb-8 border-b border-gray-700 pb-4">
+            <h2 class="text-3xl font-bold text-white mb-1">Vendor Rate Cards</h2>
+            <p class="text-xs text-gray-400">Configure rates and set your default vendor.</p>
+        </div>
 
-            <div class="relative">
-                <input type="number" step="0.1" name="rate" placeholder="Handling Rate" required class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
-                <span class="absolute right-3 top-3 text-gray-500 text-xs">/pcl</span>
-            </div>
+        <div class="bg-black/20 p-4 rounded-xl border border-white/5 mb-8">
+            <h3 class="text-xs uppercase text-blue-400 font-bold mb-3 tracking-wider">Add New Vendor</h3>
+            <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-            <div class="relative">
-                <input type="number" step="0.1" name="transport" placeholder="Transport Rate" required class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
-                <span class="absolute right-3 top-3 text-gray-500 text-xs">Flat</span>
-            </div>
+                <input type="text" name="vendor_name" placeholder="Vendor Name" required
+                       class="bg-black/40 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-green-500 transition">
 
-            <button type="submit" class="bg-green-600 font-bold text-white rounded p-3 hover:bg-green-500">ADD VENDOR</button>
-        </form>
+                <div class="relative">
+                    <input type="number" step="0.1" name="rate" placeholder="Handling Rate" required
+                           class="w-full bg-black/40 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-green-500 transition">
+                    <span class="absolute right-3 top-3 text-gray-500 text-[10px] font-mono">/PCL</span>
+                </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-gray-400">
-                <thead class="text-xs uppercase bg-black/40 text-gray-500">
+                <div class="relative">
+                    <input type="number" step="0.1" name="transport" placeholder="Transport Rate" required
+                           class="w-full bg-black/40 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-green-500 transition">
+                    <span class="absolute right-3 top-3 text-gray-500 text-[10px] font-mono">FLAT</span>
+                </div>
+
+                <button type="submit" class="bg-green-600 font-bold text-white rounded-lg p-3 hover:bg-green-500 transition shadow-lg shadow-green-900/20 uppercase text-xs tracking-widest">
+                    + Add Vendor
+                </button>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border border-white/10">
+            <table class="w-full text-left text-gray-400 text-sm">
+                <thead class="text-xs uppercase bg-black/40 text-gray-500 font-bold">
                 <tr>
-                    <th class="p-3">Vendor Name</th>
-                    <th class="p-3">Handling (Per Parcel)</th>
-                    <th class="p-3">Transport (Flat)</th>
-                    <th class="p-3 text-right">Actions</th>
+                    <th class="p-4">Vendor Name (Click ★ to Default)</th>
+                    <th class="p-4 text-center">Handling Rate</th>
+                    <th class="p-4 text-center">Transport Rate</th>
+                    <th class="p-4 text-right">Actions</th>
                 </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-800">
+                <tbody class="divide-y divide-gray-800 bg-black/10">
                 {% for v in vendors %}
-                <tr class="hover:bg-white/5">
-                    <td class="p-3 text-white font-bold">{{ v.name }}</td>
+                <tr class="hover:bg-white/5 transition group">
+
+                    <td class="p-4 flex items-center gap-3">
+                        <a href="/set_default_vendor/{{ v.id }}" title="Make Default"
+                           class="text-lg transition transform active:scale-125 {{ 'text-yellow-400' if v.is_default else 'text-gray-700 hover:text-yellow-400' }}">
+                            ★
+                        </a>
+
+                        <div>
+                            <span class="text-white font-bold block {{ 'text-yellow-100' if v.is_default else '' }}">{{ v.name }}</span>
+                            {% if v.is_default %}
+                            <span class="text-[9px] bg-yellow-500/10 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/20 inline-block mt-1">DEFAULT</span>
+                            {% endif %}
+                        </div>
+                    </td>
 
                     <form action="/update_vendor_rate/{{ v.id }}" method="POST">
-                        <td class="p-3">
-                            <input type="number" step="0.1" name="rate" value="{{ v.rate_per_parcel }}" class="w-20 bg-transparent border-b border-gray-600 text-green-400 focus:border-green-400 outline-none text-center">
+
+                        <td class="p-4 text-center">
+                            <div class="relative inline-block w-24">
+                                <input type="number" step="0.1" name="rate" value="{{ v.rate_per_parcel }}"
+                                       class="w-full bg-transparent border-b border-gray-700 text-green-400 focus:border-green-400 outline-none text-center font-mono py-1 focus:bg-white/5 transition">
+                            </div>
                         </td>
-                        <td class="p-3">
-                            <input type="number" step="0.1" name="transport" value="{{ v.transport_rate }}" class="w-20 bg-transparent border-b border-gray-600 text-blue-400 focus:border-blue-400 outline-none text-center">
+
+                        <td class="p-4 text-center">
+                            <div class="relative inline-block w-24">
+                                <input type="number" step="0.1" name="transport" value="{{ v.transport_rate }}"
+                                       class="w-full bg-transparent border-b border-gray-700 text-blue-400 focus:border-blue-400 outline-none text-center font-mono py-1 focus:bg-white/5 transition">
+                            </div>
                         </td>
-                        <td class="p-3 text-right flex justify-end gap-2">
-                            <button type="submit" class="text-blue-500 text-xs hover:text-white border border-blue-500/30 px-2 py-1 rounded">SAVE</button>
-                            <a href="/delete_vendor/{{ v.id }}" class="text-red-500 text-xs hover:text-white border border-red-500/30 px-2 py-1 rounded" onclick="return confirm('Delete?')">DEL</a>
+
+                        <td class="p-4 text-right">
+                            <div class="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition">
+                                <button type="submit" class="text-[10px] font-bold bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded hover:bg-blue-600 hover:text-white transition">
+                                    SAVE
+                                </button>
+                                <a href="/delete_vendor/{{ v.id }}" class="text-[10px] font-bold bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-600 hover:text-white transition" onclick="return confirm('Delete this vendor?')">
+                                    DEL
+                                </a>
+                            </div>
                         </td>
                     </form>
                 </tr>
                 {% endfor %}
+
+                {% if not vendors %}
+                <tr>
+                    <td colspan="4" class="p-8 text-center text-gray-600 italic">No vendors found. Add one above.</td>
+                </tr>
+                {% endif %}
                 </tbody>
             </table>
         </div>
+
     </div>
 </div>
 {% endblock %}
