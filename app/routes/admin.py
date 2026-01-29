@@ -1,171 +1,156 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, send_file, flash
 from flask_login import login_required, current_user
-from datetime import date, datetime
-from app.models import Entry, Vendor
+from app.models import Vendor, User
 from app.extensions import db
-from sqlalchemy import func
+import os
 
-core_bp = Blueprint('core', __name__)
+# --- THIS LINE WAS MISSING OR BROKEN ---
+admin_bp = Blueprint('admin', __name__)
+# ---------------------------------------
 
-# --- HELPER FUNCTIONS ---
-def safe_float(value):
-    try:
-        if not value or value.strip() == '': return 0.0
-        return float(value)
-    except: return 0.0
-
-def safe_int(value):
-    try:
-        if not value or value.strip() == '': return 0
-        return int(value)
-    except: return 0
-
-# --- HOME (QUICK ENTRY) ---
-@core_bp.route('/', methods=['GET', 'POST'])
+@admin_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
-def home():
-    today = date.today()
+def settings():
+    # Allow non-admins to VIEW, but not POST
+    if request.method == 'POST' and not current_user.is_admin:
+        flash("Access Denied: Admins only.")
+        return redirect(url_for('admin.settings'))
 
     if request.method == 'POST':
-        try:
-            handling = safe_float(request.form.get('handling'))
-            railway = safe_float(request.form.get('railway'))
-            transport = safe_float(request.form.get('transport'))
-            parcels = safe_int(request.form.get('parcels'))
+        # Add New Vendor Logic
+        name = request.form.get('vendor_name')
+        rate = float(request.form.get('rate', 70.0))
+        transport = float(request.form.get('transport', 0.0))
 
-            new_entry = Entry(
-                date=datetime.strptime(request.form['date'], '%Y-%m-%d'),
-                bill_no=f"B-{datetime.now().strftime('%d%H%M')}",
-                rr_no=request.form['rr_no'],
-                vendor=request.form['vendor'],
-                ship_from=request.form['from'],
-                ship_to=request.form['to'],
-                parcels=parcels,
-                handling_chg=handling,
-                railway_chg=railway,
-                transport_chg=transport,
-                total=handling + railway + transport
-            )
-            db.session.add(new_entry)
-            db.session.commit()
-            flash('Entry Added Successfully')
-            return redirect(url_for('core.home'))
-        except Exception as e:
-            flash(f'Error: {str(e)}')
+        # New Fields
+        bill_name = request.form.get('billing_name')
+        bill_addr = request.form.get('billing_address')
 
-    # Stats for the top cards
-    today_entries = Entry.query.filter_by(date=today).all()
-    today_rev = sum(e.total for e in today_entries)
-    today_parcels = sum(e.parcels for e in today_entries)
+        if name:
+            if Vendor.query.filter_by(name=name).first():
+                flash(f"Vendor '{name}' already exists.")
+            else:
+                db.session.add(Vendor(
+                    name=name,
+                    rate_per_parcel=rate,
+                    transport_rate=transport,
+                    billing_name=bill_name,     # Save
+                    billing_address=bill_addr   # Save
+                ))
+                db.session.commit()
+                flash(f"Vendor '{name}' added successfully.")
+        return redirect(url_for('admin.settings'))
 
-    return render_template('home.html',
-                           today=today,
-                           vendors=Vendor.query.all(),
-                           today_rev=today_rev,
-                           today_parcels=today_parcels)
+    vendors = Vendor.query.all()
+    return render_template('settings.html', vendors=vendors)
 
-# --- VIEW DATA (RECORDS) ---
-@core_bp.route('/view', methods=['GET'])
+@admin_bp.route('/update_vendor_rate/<int:id>', methods=['POST'])
 @login_required
-def view_data():
-    month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-
-    # --- LOGIC: Find the Default Vendor ---
-    vendor_filter = request.args.get('vendor')
-
-    # If no specific vendor requested, load the Default (Starred) one
-    if not vendor_filter:
-        default_vendor = Vendor.query.filter_by(is_default=True).first()
-        if default_vendor:
-            vendor_filter = default_vendor.name
-        else:
-            vendor_filter = 'All'
-
-    search_q = request.args.get('q')
-
-    # Build Query
-    query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
-
-    if vendor_filter and vendor_filter != 'All':
-        query = query.filter_by(vendor=vendor_filter)
-
-    if search_q:
-        query = query.filter(
-            (Entry.bill_no.contains(search_q)) |
-            (Entry.rr_no.contains(search_q)) |
-            (Entry.ship_to.contains(search_q))
-        )
-
-    entries = query.order_by(Entry.date.desc()).all()
-
-    return render_template('view_data.html',
-                           entries=entries,
-                           month=month,
-                           vendor=vendor_filter,
-                           search_query=search_q,
-                           vendors=Vendor.query.all())
-
-# --- ADMIN MASTER VIEW ---
-@core_bp.route('/admin_view', methods=['GET'])
-@login_required
-def admin_view():
+def update_vendor_rate(id):
     if not current_user.is_admin:
         flash("Admins only.")
-        return redirect(url_for('core.view_data'))
+        return redirect(url_for('admin.settings'))
 
-    month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    vendor_filter = request.args.get('vendor', 'All') # Admin View Defaults to All
+    vendor = Vendor.query.get_or_404(id)
+    try:
+        vendor.rate_per_parcel = float(request.form.get('rate'))
+        vendor.transport_rate = float(request.form.get('transport'))
 
-    query = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month)
+        # Update Billing Details
+        vendor.billing_name = request.form.get('billing_name')
+        vendor.billing_address = request.form.get('billing_address')
 
-    if vendor_filter and vendor_filter != 'All':
-        query = query.filter_by(vendor=vendor_filter)
+        db.session.commit()
+        flash(f"Updated details for {vendor.name}")
+    except:
+        flash("Error updating. Please check inputs.")
+    return redirect(url_for('admin.settings'))
 
-    entries = query.order_by(Entry.date.desc()).all()
-
-    return render_template('admin_view.html',
-                           entries=entries,
-                           month=month,
-                           selected_vendor=vendor_filter,
-                           vendors=Vendor.query.all())
-
-@core_bp.route('/delete/<int:id>')
+@admin_bp.route('/set_default_vendor/<int:id>')
 @login_required
-def delete_entry(id):
-    entry = Entry.query.get_or_404(id)
-    db.session.delete(entry)
+def set_default_vendor(id):
+    if not current_user.is_admin:
+        return redirect(url_for('core.home'))
+
+    # 1. Reset all vendors to False
+    Vendor.query.update({Vendor.is_default: False})
+
+    # 2. Set selected vendor to True
+    vendor = Vendor.query.get_or_404(id)
+    vendor.is_default = True
+
     db.session.commit()
-    flash('Entry Deleted')
+    flash(f"Default vendor set to: {vendor.name}")
+    return redirect(url_for('admin.settings'))
 
-    if request.referrer and 'admin_view' in request.referrer:
-        return redirect(url_for('core.admin_view'))
-    return redirect(url_for('core.view_data'))
-
-@core_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@admin_bp.route('/delete_vendor/<int:id>')
 @login_required
-def edit_entry(id):
-    entry = Entry.query.get_or_404(id)
+def delete_vendor(id):
+    if not current_user.is_admin:
+        return redirect(url_for('core.home'))
+
+    v = Vendor.query.get_or_404(id)
+    db.session.delete(v)
+    db.session.commit()
+    flash(f"Deleted vendor: {v.name}")
+    return redirect(url_for('admin.settings'))
+
+# --- USER MANAGEMENT ---
+@admin_bp.route('/users', methods=['GET', 'POST'])
+@login_required
+def users():
+    if not current_user.is_admin:
+        flash("Access Denied")
+        return redirect(url_for('core.home'))
+
     if request.method == 'POST':
-        try:
-            entry.date = datetime.strptime(request.form['date'], '%Y-%m-%d')
-            entry.vendor = request.form['vendor']
-            entry.rr_no = request.form['rr_no']
-            entry.ship_from = request.form['from']
-            entry.ship_to = request.form['to']
-            entry.parcels = safe_int(request.form.get('parcels'))
-            entry.handling_chg = safe_float(request.form.get('handling'))
-            entry.railway_chg = safe_float(request.form.get('railway'))
-            entry.transport_chg = safe_float(request.form.get('transport'))
-            entry.total = entry.handling_chg + entry.railway_chg + entry.transport_chg
+        username = request.form.get('username')
+        password = request.form.get('password')
 
-            db.session.commit()
-            flash('Entry Updated')
+        if username and password:
+            if User.query.filter_by(username=username).first():
+                flash('User already exists')
+            else:
+                new_user = User(username=username, is_admin=False) # Default to non-admin
+                new_user.set_password(password)
+                db.session.add(new_user)
+                db.session.commit()
+                flash(f'User {username} added successfully')
+        return redirect(url_for('admin.users'))
 
-            if request.referrer and 'admin_view' in request.referrer:
-                return redirect(url_for('core.admin_view'))
-            return redirect(url_for('core.view_data'))
+    users = User.query.all()
+    return render_template('users.html', users=users)
 
-        except Exception as e:
-            flash(f"Error: {str(e)}")
+@admin_bp.route('/delete_user/<int:id>')
+@login_required
+def delete_user(id):
+    if not current_user.is_admin:
+        return redirect(url_for('core.home'))
 
-    return render_template('edit.html', entry=entry, vendors=Vendor.query.all())
+    if current_user.id == id:
+        flash("Cannot delete yourself!")
+        return redirect(url_for('admin.users'))
+
+    user = User.query.get_or_404(id)
+    db.session.delete(user)
+    db.session.commit()
+    flash(f'User {user.username} deleted')
+    return redirect(url_for('admin.users'))
+
+# --- BACKUP ---
+@admin_bp.route('/backup')
+@login_required
+def backup():
+    if not current_user.is_admin:
+        return redirect(url_for('core.home'))
+
+    db_filename = 'logistics.db'
+    db_path_root = os.path.join(os.getcwd(), db_filename)
+    db_path_instance = os.path.join(os.getcwd(), 'instance', db_filename)
+
+    if os.path.exists(db_path_root):
+        return send_file(db_path_root, as_attachment=True)
+    elif os.path.exists(db_path_instance):
+        return send_file(db_path_instance, as_attachment=True)
+    else:
+        return "Database file not found", 404
