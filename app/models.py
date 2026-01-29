@@ -10,6 +10,9 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
+    # Active Status (Default is True/Active)
+        is_active = db.Column(db.Boolean, default=True)
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
