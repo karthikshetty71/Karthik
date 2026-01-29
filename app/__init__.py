@@ -34,7 +34,8 @@ def create_app():
     # Initialize DB Content
     with app.app_context():
         db.create_all()
-        # Default Admin
+
+        # Default Admin (Keep this to ensure you can always login)
         if not User.query.first():
             admin = User(username='admin', is_admin=True, is_active=True)
             admin.set_password('admin123')
@@ -42,12 +43,8 @@ def create_app():
             db.session.commit()
             print(" System: Default Admin Created")
 
-        # Default Vendors
-        if not Vendor.query.first():
-            db.session.add(Vendor(name="M/S Best Sellers"))
-            db.session.add(Vendor(name="M/S Shiva Express"))
-            db.session.add(Vendor(name="Manipal Technologies"))
-            db.session.commit()
+        # --- REMOVED: Automatic Vendor Creation ---
+        # Vendors are now managed via 'setup_vendors.py'
 
     # Logging Signals
     from flask_login import user_logged_in, user_logged_out
