@@ -14,27 +14,50 @@
 <body class="flex flex-col min-h-screen">
 
 <nav class="border-b border-gray-800 bg-black/80 backdrop-blur-md sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4">
+    <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-between items-center h-16">
 
-            <a href="/" class="flex items-center gap-2 group">
-                <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-600 rounded flex items-center justify-center font-bold text-black text-xs group-hover:scale-110 transition">KPS</div>
-                <span class="font-bold tracking-tight text-white">LOGISTICS</span>
+            <a href="/" class="flex items-center gap-2 group flex-shrink-0">
+                <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-600 rounded flex items-center justify-center font-bold text-black text-xs group-hover:scale-110 transition shadow-[0_0_15px_rgba(34,197,94,0.4)]">KPS</div>
+                <span class="font-bold tracking-tight text-white hidden sm:block">LOGISTICS</span>
             </a>
 
             {% if current_user.is_authenticated %}
 
-            <div class="hidden md:flex items-center gap-4">
-                <div class="flex gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
-                    <a href="/" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'core.home' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">ENTRY</a>
-                    <a href="/view" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'core.view_data' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">DATA</a>
-                    <a href="/invoices" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'reports.invoices' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">INVOICE</a>
-                    <a href="/analytics" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'reports.analytics' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">ANALYTICS</a>
+            <div class="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10 mx-4">
+                <a href="/" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'core.home' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">
+                    ENTRY
+                </a>
+                <a href="/view" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'core.view_data' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">
+                    DATA
+                </a>
+                <a href="/invoices" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'reports.invoices' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">
+                    INVOICE
+                </a>
+                <a href="/analytics" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'reports.analytics' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">
+                    ANALYTICS
+                </a>
+            </div>
 
-                    <a href="/settings" class="px-4 py-1.5 rounded-md text-xs font-bold transition {{ 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' if request.endpoint == 'admin.settings' else 'text-gray-400 hover:text-white hover:bg-white/5' }}">SETTINGS</a>
+            <div class="hidden md:flex items-center gap-4">
+
+                <div class="text-right leading-tight">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Signed in as</p>
+                    <p class="text-xs font-bold text-white">{{ current_user.username }}</p>
                 </div>
 
-                <a href="/logout" class="text-red-500 hover:text-red-400 text-xs font-bold border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500/10 transition">LOGOUT</a>
+                <div class="h-8 w-px bg-gray-800"></div>
+
+                <a href="/settings" class="text-gray-400 hover:text-white transition p-2 rounded-full hover:bg-white/10 relative group" title="Settings">
+                    <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    {% if request.endpoint == 'admin.settings' %}
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                    {% endif %}
+                </a>
+
+                <a href="/logout" class="text-red-500 hover:text-red-400 text-xs font-bold border border-red-500/30 px-3 py-1.5 rounded hover:bg-red-500/10 transition">
+                    LOGOUT
+                </a>
             </div>
 
             <button onclick="toggleMenu()" class="md:hidden text-white p-2 rounded hover:bg-white/10 outline-none">
@@ -49,6 +72,17 @@
 
     {% if current_user.is_authenticated %}
     <div id="mobile-menu" class="hidden md:hidden border-t border-gray-800 bg-[#0f0f10]">
+
+        <div class="px-7 py-4 border-b border-gray-800 flex items-center justify-between">
+            <div>
+                <p class="text-[10px] text-gray-500 uppercase font-bold">Logged in as</p>
+                <p class="text-sm font-bold text-white">{{ current_user.username }}</p>
+            </div>
+            <a href="/settings" class="bg-gray-800 p-2 rounded-lg text-gray-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </a>
+        </div>
+
         <div class="px-4 py-2 space-y-1">
             <a href="/" class="block px-3 py-3 rounded-md text-sm font-bold {{ 'bg-blue-600 text-white' if request.endpoint == 'core.home' else 'text-gray-300 hover:bg-white/5' }}">
                 📝 Quick Entry
@@ -61,10 +95,6 @@
             </a>
             <a href="/analytics" class="block px-3 py-3 rounded-md text-sm font-bold {{ 'bg-blue-600 text-white' if request.endpoint == 'reports.analytics' else 'text-gray-300 hover:bg-white/5' }}">
                 📈 Analytics
-            </a>
-
-            <a href="/settings" class="block px-3 py-3 rounded-md text-sm font-bold {{ 'bg-blue-600 text-white' if request.endpoint == 'admin.settings' else 'text-gray-300 hover:bg-white/5' }}">
-                ⚙️ Settings
             </a>
 
             <a href="/logout" class="block px-3 py-3 rounded-md text-sm font-bold text-red-500 hover:bg-red-500/10 mt-2">
