@@ -79,28 +79,31 @@ def add_vendor():
 @admin_bp.route('/settings/vendor/update/<int:id>', methods=['POST'])
 @login_required
 def update_vendor(id):
-    if not current_user.is_admin:
-        flash("Access Denied.")
-        return redirect(url_for('admin.settings'))
-
     vendor = Vendor.query.get_or_404(id)
-    try:
-        # Update Rates & Info
-        vendor.rate_per_parcel = float(request.form.get('rate'))
-        vendor.transport_rate = float(request.form.get('transport'))
-        vendor.billing_name = request.form.get('billing_name')
-        vendor.billing_address = request.form.get('billing_address')
 
-        # Update Column Checkboxes
-        vendor.show_rr = bool(request.form.get('show_rr'))
-        vendor.show_handling = bool(request.form.get('show_handling'))
-        vendor.show_railway = bool(request.form.get('show_railway'))
-        vendor.show_transport = bool(request.form.get('show_transport'))
+    # 1. Allow ANY user to update Pending Balance
+    try:
+        new_pending = request.form.get('pending_balance')
+        if new_pending is not None:
+            vendor.pending_balance = float(new_pending)
+
+        # 2. Only ADMINS can update critical fields (Rates, Names, etc.)
+        if current_user.is_admin:
+            vendor.rate_per_parcel = float(request.form.get('rate'))
+            vendor.transport_rate = float(request.form.get('transport'))
+            vendor.billing_name = request.form.get('billing_name')
+            vendor.billing_address = request.form.get('billing_address')
+
+            vendor.show_rr = bool(request.form.get('show_rr'))
+            vendor.show_handling = bool(request.form.get('show_handling'))
+            vendor.show_railway = bool(request.form.get('show_railway'))
+            vendor.show_transport = bool(request.form.get('show_transport'))
 
         db.session.commit()
         flash(f"Updated {vendor.name}")
     except Exception as e:
         flash(f"Error: {str(e)}")
+
     return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/settings/vendor/delete/<int:id>')

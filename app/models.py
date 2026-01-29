@@ -18,15 +18,22 @@ class User(UserMixin, db.Model):
 class Vendor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    billing_name = db.Column(db.String(150))    # Name on PDF
-    billing_address = db.Column(db.String(255)) # Address on PDF
-    rate_per_parcel = db.Column(db.Float, default=70.0) # Handling Rate
-    transport_rate = db.Column(db.Float, default=0.0)   # NEW: Transport Flat Rate
+
+    billing_name = db.Column(db.String(150))
+    billing_address = db.Column(db.String(255))
+
+    rate_per_parcel = db.Column(db.Float, default=70.0)
+    transport_rate = db.Column(db.Float, default=0.0)
     is_default = db.Column(db.Boolean, default=False)
+
+    # PDF Settings
     show_rr = db.Column(db.Boolean, default=True)
     show_handling = db.Column(db.Boolean, default=True)
     show_railway = db.Column(db.Boolean, default=True)
     show_transport = db.Column(db.Boolean, default=True)
+
+    # NEW FIELD
+    pending_balance = db.Column(db.Float, default=0.0)
 
 class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
