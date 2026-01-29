@@ -25,11 +25,13 @@ def create_app():
     from app.routes.core import core_bp
     from app.routes.admin import admin_bp
     from app.routes.reports import reports_bp
+    from app.routes.chat import chat_bp  # <--- 1. IMPORT CHAT
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(core_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(chat_bp)      # <--- 2. REGISTER CHAT
 
     # Initialize DB Content
     with app.app_context():
@@ -43,7 +45,6 @@ def create_app():
             db.session.commit()
             print(" System: Default Admin Created")
 
-        # --- REMOVED: Automatic Vendor Creation ---
         # Vendors are now managed via 'setup_vendors.py'
 
     # Logging Signals
