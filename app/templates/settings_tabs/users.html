@@ -55,8 +55,11 @@
                             </div>
                             <div class="flex flex-col">
                                 <span class="font-bold text-white text-sm">{{ u.username }}</span>
+
                                 {% if not u.is_active %}
                                 <span class="text-[9px] text-red-400 font-mono font-bold bg-red-500/10 px-1 rounded w-fit">DISABLED</span>
+                                {% else %}
+                                <span class="text-[9px] text-green-400 font-mono font-bold bg-green-500/10 px-1 rounded w-fit">ACTIVE</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -111,8 +114,9 @@
                 </tbody>
             </table>
         </div>
-        <p class="text-[10px] text-gray-500 mt-4 text-center italic">
-            * 'OFF' users cannot log in but their history remains.
+
+        <p class="text-[10px] text-gray-500 mt-4 text-center italic border-t border-white/5 pt-2">
+            <b>Note:</b> Use the buttons to switch User Type (Role) or Enable/Disable access.
         </p>
     </div>
 </div>
