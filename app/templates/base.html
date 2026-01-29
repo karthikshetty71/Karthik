@@ -7,11 +7,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
-        body { background-color: #0f0f10; color: #e0e0e0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+        /* Base styles */
+        body {
+            color: #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            /* Fallback color */
+            background-color: #0f0f10;
+            /* Background Image Setup */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
+
+<body class="flex flex-col min-h-screen"
+      style="background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.9)), url('{{ url_for('static', filename='images/railway-bg.jpg') }}');">
 
 <nav class="border-b border-gray-800 bg-black/80 backdrop-blur-md sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4">
@@ -40,7 +57,6 @@
             </div>
 
             <div class="hidden md:flex items-center gap-4">
-
                 <div class="text-right leading-tight">
                     <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Signed in as</p>
                     <p class="text-xs font-bold text-white">{{ current_user.username }}</p>
