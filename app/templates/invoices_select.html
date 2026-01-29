@@ -1,13 +1,5 @@
 {% extends "base.html" %}
 {% block content %}
-
-<style>
-    input[type="month"]::-webkit-calendar-picker-indicator {
-        filter: invert(1);
-        cursor: pointer;
-    }
-</style>
-
 <div class="max-w-md mx-auto mt-10 px-4">
     <div class="glass p-8 rounded-2xl border border-white/5">
 
@@ -20,9 +12,11 @@
 
             <div>
                 <label class="block text-xs uppercase font-bold text-gray-500 mb-2">Select Month</label>
+
                 <input type="month" name="month" value="{{ today }}" required
                        onclick="try{this.showPicker()}catch(e){}"
                        onfocus="try{this.showPicker()}catch(e){}"
+                       style="color-scheme: dark;"
                        class="w-full bg-black/40 border border-gray-700 rounded-lg p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition cursor-pointer">
             </div>
 
