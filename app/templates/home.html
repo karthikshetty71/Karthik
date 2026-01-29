@@ -1,135 +1,164 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-4xl mx-auto mt-6 px-4 pb-12">
 
-    <div class="glass p-6 rounded-2xl border border-white/10 mb-6 flex justify-between items-end">
-        <div>
-            <h2 class="text-2xl font-bold text-white">Quick Entry</h2>
-            <p class="text-gray-400 text-xs">Standard Logistics Format</p>
+<div class="max-w-3xl mx-auto mt-2 md:mt-6 w-full px-3 md:px-0 overflow-x-hidden">
+
+    <div class="hidden md:block bg-[#1e1e1e] rounded-t-lg shadow-2xl mb-0 overflow-hidden font-mono text-xs border border-gray-800">
+        <div class="bg-[#2d2d2d] px-4 py-2 flex gap-2 border-b border-gray-700">
+            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            <div class="ml-auto text-gray-500 font-sans">kps-system — bash — 120x24</div>
         </div>
-        <div class="text-right">
-            <p class="text-xs text-blue-400 uppercase font-bold">Today's Revenue</p>
-            <p class="text-2xl font-bold text-white">₹ {{ "{:,.0f}".format(today_rev) }}</p>
+        <div class="p-4 h-24 overflow-y-auto text-green-400 leading-relaxed" id="terminal-body">
+            <span id="typewriter"></span><span class="animate-pulse">_</span>
         </div>
     </div>
 
-    <div class="glass p-6 rounded-2xl border border-white/10">
-        <form method="POST" class="space-y-6">
+    <div class="glass p-5 md:p-8 rounded-xl md:rounded-b-2xl border-t border-white/10 relative z-10">
+
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 pb-4 border-b border-gray-700 gap-4">
+            <div>
+                <h2 class="text-2xl font-bold mb-1 text-white">Quick Entry</h2>
+                <p class="text-gray-400 text-xs md:text-sm">System ready. Dynamic Rate Cards enabled.</p>
+            </div>
+
+            <div class="flex gap-2 w-full md:w-auto">
+                <div class="flex-1 bg-blue-900/40 border border-blue-500/30 px-2 py-2 rounded text-center md:text-right">
+                    <p class="text-[9px] md:text-xs text-blue-300 uppercase tracking-tighter">Today's Rev</p>
+                    <p class="text-base md:text-xl font-bold text-white whitespace-nowrap">₹ {{ "{:,.0f}".format(today_rev) }}</p>
+                </div>
+                <div class="flex-1 bg-green-900/40 border border-green-500/30 px-2 py-2 rounded text-center md:text-right">
+                    <p class="text-[9px] md:text-xs text-green-300 uppercase tracking-tighter">Parcels</p>
+                    <p class="text-base md:text-xl font-bold text-white">{{ today_parcels }}</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" class="space-y-4 md:space-y-6">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Date</label>
-                    <input type="date" name="date" value="{{ date }}" required class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white [color-scheme:dark]">
+                <div class="w-full">
+                    <label class="block text-xs uppercase text-gray-500 mb-1">Date</label>
+                    <input type="date" name="date" value="{{ today }}" required
+                           class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 [color-scheme:dark] appearance-none">
                 </div>
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Vendor</label>
-                    <select name="vendor" id="vendorSelect" onchange="calc()" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
-                        <option value="" disabled selected>-- Select Vendor --</option>
-                        {% for v in vendors %}
-                        <option value="{{ v.id }}" data-rate="{{ v.rate_per_parcel }}" data-trans="{{ v.transport_rate }}">{{ v.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">From</label>
-                    <input type="text" name="from" value="Mumbai" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
-                </div>
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">To</label>
-                    <input type="text" name="to" value="Udupi" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white">
-                </div>
-                <div>
-                    <label class="block text-xs uppercase text-blue-400 font-bold mb-1">RR No.</label>
-                    <input type="text" name="rr_no" placeholder="RR Number" class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white focus:border-blue-500">
+                <div class="w-full">
+                    <label class="block text-xs uppercase text-gray-500 mb-1">Vendor</label>
+                    <div class="relative">
+                        <select name="vendor" id="vendorSelect" onchange="calculateCharges()"
+                                class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white outline-none focus:border-blue-500 appearance-none truncate pr-8">
+                            {% for v in vendors %}
+                            <option value="{{ v.name }}"
+                                    data-rate="{{ v.rate_per_parcel }}"
+                                    data-transport="{{ v.transport_rate }}"
+                                    {% if v.is_default %}selected{% endif %}>
+                                {{ v.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <hr class="border-gray-700">
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
-
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-xs uppercase text-white font-bold mb-1">Parcels</label>
-                    <input type="number" name="parcels" id="parcels" oninput="calc()" placeholder="0" required
-                           class="w-full bg-blue-900/20 border border-blue-500/50 rounded p-3 text-white font-bold text-center text-lg">
+                    <label class="block text-xs uppercase text-gray-500 mb-1">RR No.</label>
+                    <input type="text" name="rr_no" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none" placeholder="12345">
                 </div>
-
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Railway Fare</label>
-                    <input type="number" step="0.1" name="railway" id="railway" oninput="calc()" placeholder="0"
-                           class="w-full bg-black/40 border border-gray-700 rounded p-3 text-white text-center">
-                </div>
-
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Handling</label>
-                    <input type="number" step="0.1" name="handling" id="handling" readonly tabindex="-1"
-                           class="w-full bg-gray-800/50 border border-gray-800 rounded p-3 text-gray-300 text-center cursor-not-allowed">
-                    <p class="text-[9px] text-gray-600 text-center mt-1">Auto (Rate × Parcels)</p>
-                </div>
-
-                <div>
-                    <label class="block text-xs uppercase text-gray-500 font-bold mb-1">Transport</label>
-                    <input type="number" step="0.1" name="transport" id="transport" readonly tabindex="-1"
-                           class="w-full bg-gray-800/50 border border-gray-800 rounded p-3 text-gray-300 text-center cursor-not-allowed">
-                    <p class="text-[9px] text-gray-600 text-center mt-1">Auto (Trans Rate)</p>
+                <div class="grid grid-cols-2 gap-3 md:col-span-2">
+                    <div>
+                        <label class="block text-xs uppercase text-gray-500 mb-1">From</label>
+                        <input type="text" name="from" value="Mumbai" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase text-gray-500 mb-1">To</label>
+                        <input type="text" name="to" value="Udupi" class="w-full h-11 bg-black/40 border border-gray-700 rounded p-3 text-white placeholder-gray-600 focus:border-blue-500 outline-none">
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-gray-800/50 p-4 rounded-lg flex justify-between items-center border border-white/5">
-                <span class="text-gray-400 uppercase text-xs font-bold">Total Bill Amount</span>
-                <span class="text-2xl font-bold text-white" id="totalDisplay">₹ 0</span>
+            <div>
+                <label class="block text-xs uppercase text-gray-500 mb-1">No. of Parcels</label>
+                <input type="number" name="parcels" id="parcelsInput" oninput="calculateCharges()"
+                       class="w-full h-14 bg-black/40 border border-gray-700 rounded p-3 text-lg font-bold text-white placeholder-gray-600 focus:border-blue-500 outline-none" placeholder="0">
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-lg shadow-lg transition">
-                SAVE ENTRY
+            <div class="pt-6 border-t border-gray-700 space-y-3">
+                <p class="text-xs uppercase tracking-wider text-gray-400">Charges Breakdown</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="relative group">
+                        <input type="number" step="0.01" name="handling" id="handlingInput" class="w-full bg-black/40 border border-gray-700 rounded p-2 md:p-3 text-right text-white focus:border-blue-500 outline-none font-mono text-sm md:text-base" placeholder="0">
+                        <span class="absolute left-2 top-2 md:left-3 md:top-3 text-[9px] md:text-[10px] text-gray-500 font-bold">HNDL</span>
+                    </div>
+                    <div class="relative group">
+                        <input type="number" step="0.01" name="railway" class="w-full bg-black/40 border border-gray-700 rounded p-2 md:p-3 text-right text-white focus:border-blue-500 outline-none font-mono text-sm md:text-base" placeholder="0">
+                        <span class="absolute left-2 top-2 md:left-3 md:top-3 text-[9px] md:text-[10px] text-gray-500 font-bold">RAIL</span>
+                    </div>
+                    <div class="relative group">
+                        <input type="number" step="0.01" name="transport" id="transportInput" class="w-full bg-black/40 border border-gray-700 rounded p-2 md:p-3 text-right text-white focus:border-blue-500 outline-none font-mono text-sm md:text-base" placeholder="0">
+                        <span class="absolute left-2 top-2 md:left-3 md:top-3 text-[9px] md:text-[10px] text-gray-500 font-bold">TRNS</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-white text-black font-bold py-4 rounded mt-2 hover:bg-gray-200 transition transform hover:scale-[1.01] tracking-widest text-sm active:scale-95">
+                SAVE ENTRY >
             </button>
         </form>
-    </div>
-
-    <div class="mt-8 space-y-2">
-        {% for entry in entries %}
-        <div class="glass p-4 rounded-lg flex justify-between items-center border border-white/5">
-            <div>
-                <span class="text-white font-bold">{{ entry.vendor.name }}</span>
-                <span class="text-gray-500 text-xs ml-2">RR: {{ entry.rr_no }}</span>
-            </div>
-            <div class="flex items-center gap-4">
-                <span class="text-blue-400 font-bold">₹ {{ "{:,.0f}".format(entry.grand_total) }}</span>
-                <a href="/entry/delete/{{ entry.id }}" class="text-gray-600 hover:text-red-500 px-2">✕</a>
-            </div>
-        </div>
-        {% endfor %}
     </div>
 </div>
 
 <script>
-    function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+    // --- TYPEWRITER EFFECT ---
+    const textLines = ["kps.admin ~/logistics", "$ init system...", "> Loading Rate Cards... [OK]", "> Auto-Calculation Engine... [ONLINE]", "> User: {{ current_user.username }}", "$ ready_"];
+    const element = document.getElementById('typewriter');
+    let lineIndex = 0, charIndex = 0;
 
-    function calc() {
-        const parcels = getVal('parcels');
-        const railway = getVal('railway');
-
-        // Get Vendor Rates
-        const vendorSelect = document.getElementById('vendorSelect');
-        const selectedOpt = vendorSelect.options[vendorSelect.selectedIndex];
-        const rate = parseFloat(selectedOpt.getAttribute('data-rate')) || 0;
-        const transRate = parseFloat(selectedOpt.getAttribute('data-trans')) || 0;
-
-        // Auto Calculate
-        const handling = parcels * rate;
-
-        // Logic: Transport is usually flat per RR, or per parcel?
-        // Implementing: Per Parcel as per standard logic, but you can change to flat if needed
-        const transport = parcels * transRate;
-
-        document.getElementById('handling').value = handling.toFixed(1);
-        document.getElementById('transport').value = transport.toFixed(1);
-
-        const total = handling + transport + railway;
-        document.getElementById('totalDisplay').innerText = "₹ " + total.toLocaleString('en-IN');
+    function typeWriter() {
+        if (element && lineIndex < textLines.length) {
+            if (charIndex < textLines[lineIndex].length) {
+                element.innerHTML += textLines[lineIndex].charAt(charIndex++);
+                setTimeout(typeWriter, 30);
+            } else {
+                element.innerHTML += "<br/>";
+                lineIndex++;
+                charIndex = 0;
+                setTimeout(typeWriter, 300);
+            }
+        }
     }
+
+    // --- CALCULATION LOGIC ---
+    function calculateCharges() {
+        const parcels = parseFloat(document.getElementById('parcelsInput').value) || 0;
+        const vendorSelect = document.getElementById('vendorSelect');
+        const selectedOption = vendorSelect.options[vendorSelect.selectedIndex];
+
+        // Fetch rates from data attributes
+        const ratePerParcel = parseFloat(selectedOption.getAttribute('data-rate')) || 0;
+        const flatTransport = parseFloat(selectedOption.getAttribute('data-transport')) || 0;
+
+        let handling = 0;
+        let transport = 0;
+
+        // Apply Logic: Handling is Multiplied, Transport is Flat
+        if (parcels > 0) {
+            handling = parcels * ratePerParcel;
+            transport = flatTransport;
+        }
+
+        document.getElementById('handlingInput').value = handling;
+        document.getElementById('transportInput').value = transport;
+    }
+
+    // Run on load
+    window.onload = function() {
+        typeWriter();
+        calculateCharges(); // Sets initial values based on default vendor
+    };
 </script>
 {% endblock %}
