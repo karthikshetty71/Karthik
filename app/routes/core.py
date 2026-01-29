@@ -62,7 +62,7 @@ def home():
 def view_data():
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
 
-    # DEFAULT TO SHIVA EXPRESS if no vendor selected
+    # --- FIX: Default to 'Shiva Express' if no vendor is selected ---
     vendor_filter = request.args.get('vendor', 'Shiva Express')
 
     search_q = request.args.get('q')
@@ -88,7 +88,7 @@ def view_data():
                            search_query=search_q,
                            vendors=Vendor.query.all())
 
-# --- NEW: ADMIN FULL VIEW ---
+# --- ADMIN FULL VIEW ---
 @core_bp.route('/admin_view', methods=['GET'])
 @login_required
 def admin_view():
@@ -98,7 +98,6 @@ def admin_view():
 
     month = request.args.get('month', datetime.today().strftime('%Y-%m'))
     entries = Entry.query.filter(func.strftime('%Y-%m', Entry.date) == month).order_by(Entry.date.desc()).all()
-
     return render_template('admin_view.html', entries=entries, month=month)
 
 @core_bp.route('/delete/<int:id>')
@@ -108,7 +107,6 @@ def delete_entry(id):
     db.session.delete(entry)
     db.session.commit()
     flash('Entry Deleted')
-    # Redirect back to where they came from (Admin view or Normal view)
     if request.referrer and 'admin_view' in request.referrer:
         return redirect(url_for('core.admin_view'))
     return redirect(url_for('core.view_data'))
