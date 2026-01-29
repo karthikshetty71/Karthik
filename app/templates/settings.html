@@ -1,118 +1,238 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-7xl mx-auto mt-6 md:mt-10 px-4">
-    <div class="glass p-6 md:p-8 rounded-2xl min-h-[80vh]">
+<div class="max-w-7xl mx-auto mt-6 px-4">
 
-        <div class="mb-8 border-b border-gray-700 pb-4 flex justify-between items-end">
-            <div>
-                <h2 class="text-3xl font-bold text-white mb-1">Vendor Master</h2>
-                <p class="text-xs text-gray-400">Manage rates, billing details, and PDF settings.</p>
-            </div>
-            {% if not current_user.is_admin %}
-            <span class="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded border border-yellow-500/30 uppercase tracking-widest font-bold">Read Only</span>
+    <div class="flex flex-col md:flex-row justify-between items-end mb-8 pb-4 border-b border-gray-800">
+        <div>
+            <h2 class="text-3xl font-bold text-white tracking-tight">Settings & Control</h2>
+            <p class="text-gray-400 text-sm mt-1">Manage system configurations</p>
+        </div>
+
+        <div class="flex gap-2 mt-4 md:mt-0 bg-black/40 p-1 rounded-lg border border-white/10">
+            <button onclick="showTab('vendors')" id="tab-btn-vendors" class="px-4 py-2 text-xs font-bold rounded transition bg-blue-600 text-white shadow-lg">
+                VENDOR MASTER
+            </button>
+
+            {% if current_user.is_admin %}
+            <button onclick="showTab('users')" id="tab-btn-users" class="px-4 py-2 text-xs font-bold rounded transition text-gray-400 hover:text-white hover:bg-white/5">
+                USER ACCESS
+            </button>
+            <button onclick="showTab('system')" id="tab-btn-system" class="px-4 py-2 text-xs font-bold rounded transition text-gray-400 hover:text-white hover:bg-white/5">
+                SYSTEM DATA
+            </button>
             {% endif %}
         </div>
+    </div>
 
-        {% if current_user.is_admin %}
-        <div class="bg-black/20 p-4 rounded-xl border border-white/5 mb-8">
-            <h3 class="text-xs uppercase text-blue-400 font-bold mb-3 tracking-wider">Add New Vendor</h3>
-            <form method="POST" class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-                <div class="col-span-1 md:col-span-2">
-                    <input type="text" name="vendor_name" placeholder="Internal Name (e.g. Shiva)" required class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
-                </div>
-                <input type="text" name="billing_name" placeholder="Legal Bill Name" class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
-                <input type="text" name="billing_address" placeholder="Billing Address" class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
+    <div id="tab-vendors" class="tab-content block">
+        <div class="glass p-6 rounded-2xl">
 
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="number" step="0.1" name="rate" placeholder="Rate" required class="bg-black/40 border border-gray-700 rounded p-2 text-white text-sm text-center">
-                    <input type="number" step="0.1" name="transport" placeholder="Trans" required class="bg-black/40 border border-gray-700 rounded p-2 text-white text-sm text-center">
-                </div>
+            {% if current_user.is_admin %}
+            <div class="bg-black/20 p-4 rounded-xl border border-white/5 mb-8">
+                <h3 class="text-xs uppercase text-blue-400 font-bold mb-3 tracking-wider">Add New Vendor</h3>
+                <form action="/settings/vendor/add" method="POST" class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                    <div class="col-span-1 md:col-span-2">
+                        <input type="text" name="vendor_name" placeholder="Internal Name (e.g. Shiva)" required class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
+                    </div>
+                    <input type="text" name="billing_name" placeholder="Legal Bill Name" class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
+                    <input type="text" name="billing_address" placeholder="Billing Address" class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white text-sm">
 
-                <button type="submit" class="bg-green-600 font-bold text-white rounded p-2 hover:bg-green-500 text-xs uppercase w-full">
-                    + Add
-                </button>
-            </form>
-        </div>
-        {% endif %}
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" step="0.1" name="rate" placeholder="Rate" required class="bg-black/40 border border-gray-700 rounded p-2 text-white text-sm text-center">
+                        <input type="number" step="0.1" name="transport" placeholder="Trans" required class="bg-black/40 border border-gray-700 rounded p-2 text-white text-sm text-center">
+                    </div>
 
-        <div class="overflow-x-auto rounded-lg border border-white/10">
-            <table class="w-full text-left text-gray-400 text-sm">
-                <thead class="text-xs uppercase bg-black/40 text-gray-500 font-bold">
-                <tr>
-                    <th class="p-3">Internal Name</th>
-                    <th class="p-3">Billing Name</th>
-                    <th class="p-3">Address</th>
-                    <th class="p-3 text-center">PDF Columns</th> <th class="p-3 text-center">Rate</th>
-                    <th class="p-3 text-center">Trans</th>
-                    {% if current_user.is_admin %}<th class="p-3 text-right">Action</th>{% endif %}
-                </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-800 bg-black/10">
-                {% for v in vendors %}
-                <tr class="hover:bg-white/5 transition align-top">
+                    <button type="submit" class="bg-green-600 font-bold text-white rounded p-2 hover:bg-green-500 text-xs uppercase w-full">+ Add</button>
+                </form>
+            </div>
+            {% endif %}
 
-                    <td class="p-3">
-                        <div class="flex items-center gap-2 mt-2">
-                            {% if current_user.is_admin %}
-                            <a href="/set_default_vendor/{{ v.id }}" class="text-lg {{ 'text-yellow-400' if v.is_default else 'text-gray-700 hover:text-yellow-400' }}">★</a>
-                            {% endif %}
-                            <span class="font-bold text-white">{{ v.name }}</span>
-                            {% if v.is_default %}
-                            <span class="text-[9px] bg-yellow-500/20 text-yellow-300 px-1 rounded ml-1">DEF</span>
-                            {% endif %}
-                        </div>
-                    </td>
-
-                    {% if current_user.is_admin %}
-                    <form action="/update_vendor_rate/{{ v.id }}" method="POST">
-                        <td class="p-3"><textarea name="billing_name" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs focus:border-blue-500 outline-none h-8">{{ v.billing_name or '' }}</textarea></td>
-                        <td class="p-3"><textarea name="billing_address" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs focus:border-blue-500 outline-none h-8">{{ v.billing_address or '' }}</textarea></td>
-
+            <div class="overflow-x-auto rounded-lg border border-white/10">
+                <table class="w-full text-left text-gray-400 text-sm">
+                    <thead class="text-xs uppercase bg-black/40 text-gray-500 font-bold">
+                    <tr>
+                        <th class="p-3">Vendor</th>
+                        <th class="p-3">Billing Info</th>
+                        <th class="p-3 text-center">PDF Columns</th>
+                        <th class="p-3 text-center">Rate / Trans</th>
+                        {% if current_user.is_admin %}<th class="p-3 text-right">Action</th>{% endif %}
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800 bg-black/10">
+                    {% for v in vendors %}
+                    <tr class="hover:bg-white/5 transition align-top">
                         <td class="p-3">
-                            <div class="grid grid-cols-2 gap-x-2 gap-y-1 bg-black/20 p-2 rounded border border-gray-800 w-32">
-                                <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer hover:text-white">
-                                    <input type="checkbox" name="show_rr" {% if v.show_rr %}checked{% endif %} class="accent-green-500"> RR No
-                                </label>
-                                <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer hover:text-white">
-                                    <input type="checkbox" name="show_handling" {% if v.show_handling %}checked{% endif %} class="accent-green-500"> Hndl
-                                </label>
-                                <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer hover:text-white">
-                                    <input type="checkbox" name="show_railway" {% if v.show_railway %}checked{% endif %} class="accent-green-500"> Rail
-                                </label>
-                                <label class="flex items-center gap-1 text-[9px] text-gray-400 cursor-pointer hover:text-white">
-                                    <input type="checkbox" name="show_transport" {% if v.show_transport %}checked{% endif %} class="accent-green-500"> Trans
-                                </label>
+                            <div class="flex items-center gap-2 mt-2">
+                                {% if current_user.is_admin %}
+                                <a href="/settings/vendor/default/{{ v.id }}" class="text-lg {{ 'text-yellow-400' if v.is_default else 'text-gray-700 hover:text-yellow-400' }}">★</a>
+                                {% endif %}
+                                <span class="font-bold text-white">{{ v.name }}</span>
+                                {% if v.is_default %}<span class="text-[9px] bg-yellow-500/20 text-yellow-300 px-1 rounded">DEF</span>{% endif %}
                             </div>
                         </td>
 
-                        <td class="p-3 text-center"><input type="number" step="0.1" name="rate" value="{{ v.rate_per_parcel }}" class="w-14 bg-transparent border-b border-gray-700 text-green-400 text-center outline-none mt-2"></td>
-                        <td class="p-3 text-center"><input type="number" step="0.1" name="transport" value="{{ v.transport_rate }}" class="w-14 bg-transparent border-b border-gray-700 text-blue-400 text-center outline-none mt-2"></td>
+                        {% if current_user.is_admin %}
+                        <form action="/settings/vendor/update/{{ v.id }}" method="POST">
+                            <td class="p-3 space-y-2">
+                                <textarea name="billing_name" placeholder="Billing Name" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs h-8 focus:border-blue-500 outline-none">{{ v.billing_name or '' }}</textarea>
+                                <textarea name="billing_address" placeholder="Address" class="w-full bg-transparent border-b border-gray-700 text-gray-300 text-xs h-8 focus:border-blue-500 outline-none">{{ v.billing_address or '' }}</textarea>
+                            </td>
 
-                        <td class="p-3 text-right whitespace-nowrap pt-4">
-                            <button type="submit" class="text-blue-500 text-xs border border-blue-500/30 px-2 py-1 rounded hover:bg-blue-600 hover:text-white mr-1">SAVE</button>
-                            <a href="/delete_vendor/{{ v.id }}" class="text-red-500 text-xs border border-red-500/30 px-2 py-1 rounded hover:bg-red-600 hover:text-white" onclick="return confirm('Delete {{ v.name }}?')">DEL</a>
+                            <td class="p-3">
+                                <div class="grid grid-cols-2 gap-x-2 gap-y-1 bg-black/20 p-2 rounded border border-gray-800 w-32">
+                                    <label class="flex items-center gap-1 text-[9px] text-gray-400"><input type="checkbox" name="show_rr" {% if v.show_rr %}checked{% endif %} class="accent-green-500"> RR</label>
+                                    <label class="flex items-center gap-1 text-[9px] text-gray-400"><input type="checkbox" name="show_handling" {% if v.show_handling %}checked{% endif %} class="accent-green-500"> Hndl</label>
+                                    <label class="flex items-center gap-1 text-[9px] text-gray-400"><input type="checkbox" name="show_railway" {% if v.show_railway %}checked{% endif %} class="accent-green-500"> Rail</label>
+                                    <label class="flex items-center gap-1 text-[9px] text-gray-400"><input type="checkbox" name="show_transport" {% if v.show_transport %}checked{% endif %} class="accent-green-500"> Trns</label>
+                                </div>
+                            </td>
+
+                            <td class="p-3 text-center space-y-2">
+                                <input type="number" step="0.1" name="rate" value="{{ v.rate_per_parcel }}" class="w-16 bg-transparent border-b border-gray-700 text-green-400 text-center text-xs">
+                                <input type="number" step="0.1" name="transport" value="{{ v.transport_rate }}" class="w-16 bg-transparent border-b border-gray-700 text-blue-400 text-center text-xs">
+                            </td>
+
+                            <td class="p-3 text-right pt-6">
+                                <button type="submit" class="text-blue-400 hover:text-white text-xs font-bold mr-2">SAVE</button>
+                                <a href="/settings/vendor/delete/{{ v.id }}" class="text-red-500 hover:text-white text-xs font-bold" onclick="return confirm('Delete {{ v.name }}?')">DEL</a>
+                            </td>
+                        </form>
+                        {% else %}
+                        <td class="p-3 text-xs text-gray-400">
+                            <div class="font-bold text-gray-300">{{ v.billing_name or '-' }}</div>
+                            <div>{{ v.billing_address or '-' }}</div>
                         </td>
-                    </form>
-
-                    {% else %}
-                    <td class="p-3 text-gray-300 text-xs">{{ v.billing_name or '-' }}</td>
-                    <td class="p-3 text-gray-300 text-xs">{{ v.billing_address or '-' }}</td>
-                    <td class="p-3">
-                        <div class="flex flex-wrap gap-1">
-                            {% if v.show_rr %}<span class="text-[9px] bg-gray-700 text-gray-300 px-1 rounded">RR</span>{% endif %}
-                            {% if v.show_handling %}<span class="text-[9px] bg-gray-700 text-gray-300 px-1 rounded">HNDL</span>{% endif %}
-                            {% if v.show_railway %}<span class="text-[9px] bg-gray-700 text-gray-300 px-1 rounded">RAIL</span>{% endif %}
-                            {% if v.show_transport %}<span class="text-[9px] bg-gray-700 text-gray-300 px-1 rounded">TRNS</span>{% endif %}
-                        </div>
-                    </td>
-                    <td class="p-3 text-center text-green-400 font-mono">{{ v.rate_per_parcel }}</td>
-                    <td class="p-3 text-center text-blue-400 font-mono">{{ v.transport_rate }}</td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                        <td class="p-3"><div class="text-xs text-gray-500">Read Only</div></td>
+                        <td class="p-3 text-center"><div class="text-green-400 font-mono">{{ v.rate_per_parcel }}</div></td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    {% if current_user.is_admin %}
+    <div id="tab-users" class="tab-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <div class="md:col-span-1 glass p-6 rounded-2xl h-fit">
+                <h3 class="text-lg font-bold text-white mb-4">Add New User</h3>
+                <form action="/settings/user/add" method="POST" class="space-y-4">
+                    <div>
+                        <label class="text-xs text-gray-500 uppercase font-bold">Username</label>
+                        <input type="text" name="username" required class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white mt-1">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 uppercase font-bold">Password</label>
+                        <input type="password" name="password" required class="w-full bg-black/40 border border-gray-700 rounded p-2 text-white mt-1">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-500 transition">Create Account</button>
+                </form>
+            </div>
+
+            <div class="md:col-span-2 glass p-6 rounded-2xl">
+                <h3 class="text-lg font-bold text-white mb-4">Active Users</h3>
+                <div class="overflow-hidden rounded-lg border border-white/10">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-black/40 text-gray-500 font-bold text-xs uppercase">
+                        <tr>
+                            <th class="p-3">User</th>
+                            <th class="p-3">Role</th>
+                            <th class="p-3 text-right">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800 bg-black/10">
+                        {% for u in users %}
+                        <tr>
+                            <td class="p-3 text-white font-bold">{{ u.username }}</td>
+                            <td class="p-3">
+                                {% if u.is_admin %}
+                                <span class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs font-bold border border-purple-500/30">ADMIN</span>
+                                {% else %}
+                                <span class="bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs">STAFF</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3 text-right">
+                                {% if u.id != current_user.id %}
+                                <a href="/settings/user/delete/{{ u.id }}" class="text-red-500 hover:text-white text-xs font-bold" onclick="return confirm('Revoke access for {{ u.username }}?')">REVOKE</a>
+                                {% else %}
+                                <span class="text-gray-600 text-xs italic">Current</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-system" class="tab-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div class="glass p-8 rounded-2xl flex flex-col items-center justify-center text-center border border-blue-500/20">
+                <div class="bg-blue-500/20 p-4 rounded-full mb-4">
+                    <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Download Database Backup</h3>
+                <p class="text-gray-400 text-sm mb-6 max-w-xs">Download a full copy of 'logistics.db'. Use this to restore data if needed.</p>
+                <a href="/settings/backup" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-full transition shadow-lg shadow-blue-500/30">
+                    Download .DB File
+                </a>
+            </div>
+
+            <div class="glass p-8 rounded-2xl border border-white/5">
+                <h3 class="text-lg font-bold text-white mb-6 border-b border-gray-700 pb-2">System Status</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400 text-sm">Total Database Size</span>
+                        <span class="text-white font-mono font-bold">{{ db_size }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400 text-sm">Total Parcel Entries</span>
+                        <span class="text-white font-mono font-bold">{{ total_entries }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400 text-sm">Active Vendors</span>
+                        <span class="text-white font-mono font-bold">{{ vendors|length }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400 text-sm">Server Status</span>
+                        <span class="text-green-400 font-bold text-xs bg-green-500/20 px-2 py-1 rounded">ONLINE</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% endif %}
+
 </div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all contents
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('block'));
+
+        // Reset buttons
+        const btns = document.querySelectorAll('button[id^="tab-btn-"]');
+        btns.forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white', 'shadow-lg');
+            btn.classList.add('text-gray-400', 'hover:text-white');
+        });
+
+        // Show selected content
+        document.getElementById('tab-' + tabName).classList.remove('hidden');
+        document.getElementById('tab-' + tabName).classList.add('block');
+
+        // Highlight selected button
+        const activeBtn = document.getElementById('tab-btn-' + tabName);
+        activeBtn.classList.remove('text-gray-400', 'hover:text-white');
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
+    }
+</script>
 {% endblock %}
